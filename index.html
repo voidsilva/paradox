@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>O Paradoxo — ser bom é suficiente?</title>
+<meta name="description" content="O Idiota, de Dostoiévski, contado com as pinturas do vídeo “O Paradoxo de Ser uma Boa Pessoa”: por que a bondade parece fraqueza num mundo corrompido.">
+<meta name="theme-color" content="#0d0907">
+<meta property="og:title" content="O Paradoxo — ser bom é suficiente?">
+<meta property="og:description" content="O Idiota, de Dostoiévski, em pinturas que flutuam.">
+<meta property="og:image" content="img/og.jpg">
+<meta property="og:type" content="website">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/bodoni-italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="src/styles.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CreativeWork","name":"O Paradoxo de Ser uma Boa Pessoa","about":{"@type":"Book","name":"O Idiota","author":{"@type":"Person","name":"Fiódor Dostoiévski"},"datePublished":"1869"},"inLanguage":"pt-BR","citation":{"@type":"VideoObject","name":"O Paradoxo de Ser uma Boa Pessoa | O Alerta de Dostoiévski para a Sociedade","url":"https://www.youtube.com/watch?v=7dcqp1zuZd4","uploadDate":"2026-03-15"}}
+</script>
+<script type="importmap">
+{"imports":{"three":"./vendor/three/three.module.min.js","app/":"./src/"}}
+</script>
+</head>
+<body class="is-loading">
+
+<div class="loader" id="loader" aria-live="polite">
+  <p class="loader__mark"><i>O</i> Paradoxo</p>
+  <p class="mono loader__n"><span id="loadN">00</span> / 32 pinturas</p>
+</div>
+
+<header class="hdr" id="hdr">
+  <a class="hdr__mark" href="#top" aria-label="O Paradoxo, início"><i>O</i><span>Paradoxo</span><small class="mono">de ser bom</small></a>
+  <nav class="hdr__nav mono" aria-label="Seções">
+    <a href="#forte">A bondade forte</a>
+    <a href="#quem">Quem é quem</a>
+    <a href="#video">O vídeo</a>
+  </nav>
+  <button class="hdr__menu mono" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu">Menu</button>
+</header>
+
+<nav class="menu" id="menu" hidden aria-label="Menu">
+  <a href="#top"><span class="mono">I</span>Início</a>
+  <a href="#forte"><span class="mono">II</span>A bondade forte</a>
+  <a href="#quem"><span class="mono">III</span>Quem é quem</a>
+  <a href="#video"><span class="mono">IV</span>O vídeo</a>
+</nav>
+
+<ol class="index mono" id="index" aria-hidden="true">
+  <li><span>O começo</span><b>·</b></li>
+  <li><span>O experimento</span><b>I</b></li>
+  <li><span>O trem</span><b>II</b></li>
+  <li><span>Cem mil rublos</span><b>III</b></li>
+  <li><span>Bom demais</span><b>IV</b></li>
+  <li><span>A luz dói</span><b>V</b></li>
+  <li><span>O que fica</span><b>VI</b></li>
+</ol>
+
+<main id="top">
+  <section class="world" id="world" aria-label="O Idiota em sete cenas">
+    <div class="stage" id="stage">
+      <canvas id="gl" aria-hidden="true"></canvas>
+
+      <article class="st st--hero" data-st="0">
+        <p class="mono st__kick ln" style="display:flex"><span>Fiódor Dostoiévski</span><span>O Idiota, 1869</span></p>
+        <h1 class="st__t"><span class="ln"><em class="sw">Ser bom</em></span><span class="ln"><b>é suficiente?</b></span></h1>
+        <p class="st__p ln">Quase todo mundo aprende cedo que um coração puro basta. E se essa for uma mentira confortável?</p>
+      </article>
+
+      <article class="st st--l" data-st="1">
+        <p class="mono st__num ln">I — O experimento</p>
+        <h2 class="st__t"><span class="ln"><b>Um homem</b></span><span class="ln"><em class="sw">genuinamente bom</em></span></h2>
+        <p class="st__p ln">Dostoiévski coloca esse homem no centro de um mundo corroído por desejo, humilhação e autodestruição. E observa o que acontece.</p>
+      </article>
+
+      <article class="st st--r" data-st="2">
+        <p class="mono st__num ln">II — O trem</p>
+        <h2 class="st__t"><span class="ln"><em class="sw">um</em> <b>estrangeiro</b></span><span class="ln"><b>moral</b></span></h2>
+        <p class="st__p ln">A caminho de São Petersburgo, o príncipe Míchkin senta entre Rogójin, consumido pela obsessão, e Lébedev, que vive de tirar vantagem do caos. Ele não fala, não pensa e não deseja como eles.</p>
+      </article>
+
+      <article class="st st--l" data-st="3">
+        <p class="mono st__num ln">III — Cem mil rublos</p>
+        <h2 class="st__t"><span class="ln"><b>100.000</b></span><span class="ln"><em class="sw">rublos no fogo</em></span></h2>
+        <p class="st__p ln">Rogójin tenta comprar Nastássia Filíppovna. Ela atira o dinheiro às chamas e, por um instante, arranca a máscara de todos na sala. Míchkin oferece outra coisa: amor sem julgamento.</p>
+      </article>
+
+      <article class="st st--c" data-st="4">
+        <p class="mono st__num ln">IV — Bom demais</p>
+        <h2 class="st__t st__t--list">
+          <span class="ln"><b>Bondade</b> <em class="sw">não é</em> <b>passividade.</b></span>
+          <span class="ln"><b>Compaixão</b> <em class="sw">não é</em> <b>indecisão.</b></span>
+          <span class="ln"><b>Perdão</b> <em class="sw">não é</em> <b>falta de limite.</b></span>
+        </h2>
+      </article>
+
+      <article class="st st--r" data-st="5">
+        <p class="mono st__num ln">V — A luz dói</p>
+        <h2 class="st__t"><span class="ln"><em class="sw">às vezes</em></span><span class="ln"><b>a luz dói</b></span></h2>
+        <p class="st__p ln">Não basta oferecer luz a quem aprendeu a viver no escuro. Às vezes ela dói mais do que a própria escuridão.</p>
+      </article>
+
+      <article class="st st--hero" data-st="6">
+        <p class="mono st__num ln">VI — O que fica</p>
+        <h2 class="st__t"><span class="ln"><em class="sw">Ser bom</em></span><span class="ln"><b>é só o começo.</b></span></h2>
+        <p class="st__p ln">Como continuar humano sem ser destruído pelo que há de mais desumano ao redor?</p>
+      </article>
+
+      <p class="mono cue" id="cue" aria-hidden="true">Role para entrar nas pinturas</p>
+    </div>
+  </section>
+
+  <div class="page" id="page">
+    <div class="tear" aria-hidden="true"></div>
+
+    <section class="forte" id="forte" aria-labelledby="forteT">
+      <p class="mono kick">A resposta do romance</p>
+      <h2 class="big" id="forteT"><em class="sw">Uma</em> bondade forte</h2>
+      <p class="lede">O livro não ridiculariza a bondade. Ele a trata como algo raríssimo, quase sagrado. Mas mostra que ela, sozinha, não reorganiza o mundo. Ser uma boa pessoa precisa significar também:</p>
+      <div class="deck" id="deck">
+        <figure class="dc"><img src="img/paint/p02-dostoievski.jpg" alt="" loading="lazy"><figcaption><span class="mono">I</span>Discernir</figcaption></figure>
+        <figure class="dc"><img src="img/paint/p04-dois-homens.jpg" alt="" loading="lazy"><figcaption><span class="mono">II</span>Escolher</figcaption></figure>
+        <figure class="dc"><img src="img/paint/p18-gola.jpg" alt="" loading="lazy"><figcaption><span class="mono">III</span>Agir</figcaption></figure>
+        <figure class="dc"><img src="img/paint/p05-nastassia.jpg" alt="" loading="lazy"><figcaption><span class="mono">IV</span>Recusar</figcaption></figure>
+        <figure class="dc"><img src="img/paint/p16-olhar.jpg" alt="" loading="lazy"><figcaption><span class="mono">V</span>Enfrentar</figcaption></figure>
+        <figure class="dc"><img src="img/paint/p20-duas.jpg" alt="" loading="lazy"><figcaption><span class="mono">VI</span>Proteger</figcaption></figure>
+      </div>
+      <p class="mono note">Discernir, escolher, agir, recusar, enfrentar, proteger: os seis verbos que o vídeo propõe.</p>
+    </section>
+
+    <section class="quem" id="quem" aria-labelledby="quemT">
+      <div class="quem__head">
+        <p class="mono kick">Quem é quem</p>
+        <h2 class="big" id="quemT"><em class="sw">Um</em> homem bom <em class="sw">num</em> mundo doente</h2>
+      </div>
+      <ul class="cast" id="cast">
+        <li data-img="img/cut/p01-retrato.webp"><span class="mono">01</span><b>Míchkin</b><i>Bom demais. Não se protege, não calcula, não impõe limite.</i></li>
+        <li data-img="img/cut/p05-nastassia.webp"><span class="mono">02</span><b>Nastássia Filíppovna</b><i>Ferida a ponto de não suportar ser amada de forma pura.</i></li>
+        <li data-img="img/cut/p03-trem.webp"><span class="mono">03</span><b>Rogójin</b><i>Onde Míchkin oferece liberdade, ele oferece prisão.</i></li>
+        <li data-img="img/cut/p10-dama.webp"><span class="mono">04</span><b>Aglaia</b><i>Atraída pela pureza dele e irritada por ela, ao mesmo tempo.</i></li>
+        <li data-img="img/cut/p11-cabisbaixo.webp"><span class="mono">05</span><b>Gánia</b><i>Desmascarado quando o dinheiro vai parar no fogo.</i></li>
+        <li data-img="img/cut/p07-flor.webp"><span class="mono">06</span><b>Lébedev</b><i>Sobrevive se adaptando ao caos e tirando vantagem dele.</i></li>
+      </ul>
+      <img class="cast__peek" id="peek" alt="" aria-hidden="true">
+      <p class="mono note">Os retratos são pinturas usadas no vídeo, escolhidas aqui como ilustração de cada figura.</p>
+    </section>
+
+    <section class="pick" aria-labelledby="pickT">
+      <p class="mono kick">A pergunta do vídeo</p>
+      <h2 class="big" id="pickT">Míchkin é <em class="sw">bondade</em> ou <em class="sw">ingenuidade</em>?</h2>
+      <div class="pick__btns" role="group" aria-label="Escolha uma resposta">
+        <button type="button" class="pill" data-pick="b" aria-pressed="false">Bondade</button>
+        <button type="button" class="pill" data-pick="i" aria-pressed="false">Ingenuidade</button>
+      </div>
+      <p class="pick__a" id="pickA" aria-live="polite"></p>
+    </section>
+
+    <section class="video" id="video" aria-labelledby="videoT">
+      <p class="mono kick">O vídeo</p>
+      <h2 class="big" id="videoT"><em class="sw">assista</em> inteiro</h2>
+      <div class="frame">
+        <div class="player" id="player">
+          <button class="player__face" id="playerBtn" type="button" aria-label="Reproduzir o vídeo O Paradoxo de Ser uma Boa Pessoa">
+            <img src="img/paint/p01-retrato.jpg" alt="">
+            <span class="player__play" aria-hidden="true">▶</span>
+            <span class="mono player__cap">A Psique · 23 min<br>O Paradoxo de Ser uma Boa Pessoa</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <h2 class="foot__t"><em class="sw">Ser bom</em> é só o começo.</h2>
+      <a class="btn" href="https://www.youtube.com/watch?v=7dcqp1zuZd4" target="_blank" rel="noopener"><span>Ver no YouTube</span><b aria-hidden="true">↗</b></a>
+      <div class="foot__cols">
+        <p><span class="mono">Vídeo</span>A Psique, 15 de março de 2026</p>
+        <p><span class="mono">Livro</span>O Idiota, Fiódor Dostoiévski, 1869</p>
+        <p><span class="mono">Imagens</span>Pinturas exibidas no vídeo, usadas como referência</p>
+        <p><span class="mono">Compartilhar</span><button class="copy" type="button" data-copy="https://www.youtube.com/watch?v=7dcqp1zuZd4">Copiar link do vídeo</button><span class="copied mono" aria-live="polite"></span></p>
+      </div>
+    </footer>
+  </div>
+</main>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
