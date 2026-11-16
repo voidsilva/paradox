@@ -40,9 +40,13 @@ const vert = /* glsl */`
     gl_Position = projectionMatrix * mv;
   }`;
 const frag = /* glsl */`
-  uniform sampler2D map; uniform float uOpacity, uDim, uShift, uVig, uFrame, uCut, uNear, uFar, uAsp;
-  uniform vec3 uFog, uGold;
+  uniform sampler2D map; uniform float uOpacity, uDim, uShift, uVig, uFrame, uCut, uNear, uFar, uAsp, uBurn, uSeed, uSheen;
+  uniform vec3 uFog, uGold; uniform vec2 uLight;
   varying vec2 vUv; varying float vDepth;
+  float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+    return mix(mix(hash(i), hash(i+vec2(1.,0.)), f.x), mix(hash(i+vec2(0.,1.)), hash(i+1.), f.x), f.y); }
+  float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 4; i++){ v += a*noise(p); p *= 2.03; a *= .5; } return v; }
   void main(){
     vec2 uv = vUv;
     vec4 c = texture2D(map, uv);
@@ -50,7 +54,7 @@ const frag = /* glsl */`
       c.r = texture2D(map, uv + vec2(uShift, 0.)).r;
       c.b = texture2D(map, uv - vec2(uShift, 0.)).b;
     }
-    float a = mix(1., c.a * smoothstep(.0, .22, uv.y), uCut); // recortes somem suaves na base
+    float a = mix(1., c.a * smoothstep(.0, .22, uv.y) * smoothstep(1., .95, uv.y), uCut); // recortes somem suaves na base
     if (a < .02) discard;
     vec3 col = c.rgb * uDim;
     // vinheta (fundo): bordas se dissolvem na escuridão
@@ -60,6 +64,20 @@ const frag = /* glsl */`
     vec2 e = min(uv, 1. - uv) * vec2(uAsp, 1.);
     float b = step(min(e.x, e.y), .035);
     col = mix(col, uGold * (.55 + .45 * fract(sin(dot(uv, vec2(91., 37.)))*999.)), b * uFrame);
+    // verniz: um brilho largo que segue o mouse
+    float sh = dot(uv - uLight, normalize(vec2(1., .55)));
+    col += vec3(1., .9, .72) * exp(-sh*sh*38.) * .07 * uSheen;
+    // queima: ao chegar perto, a tela pega fogo do centro para fora e abre passagem
+    if (uBurn > .001) {
+      vec2 q = (uv - .5) * vec2(uAsp, 1.);
+      float r = length(q) / (.5 * max(uAsp, 1.));
+      float m = fbm(q * 6. + uSeed * 17.) * .5 + noise(q * 30. + uSeed * 5.) * .1 + (1. - r) * .4;
+      float th = 1.02 - uBurn * 1.25;
+      if (m > th) discard;
+      col *= 1. - .9 * smoothstep(th - .09, th - .015, m);          // chamuscado
+      col += vec3(1., .38, .08) * smoothstep(th - .022, th, m) * 1.3;  // borda em brasa
+      col += vec3(1., .82, .5) * smoothstep(th - .005, th, m) * 1.2;
+    }
     float f = smoothstep(uNear, uFar, vDepth);
     col = mix(col, uFog, f);
     gl_FragColor = vec4(col, a * uOpacity);
@@ -103,6 +121,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
         uNear: { value: o.near ?? 40 }, uFar: { value: o.far ?? 120 }, uAsp: { value: asp },
         uFog: { value: FOG }, uGold: { value: new THREE.Color(0xb8893a) },
         uBend: { value: 0 }, uTime: { value: 0 }, uSeed: { value: Math.random() },
+        uBurn: { value: 0 }, uSheen: { value: o.cut ? .5 : 1 }, uLight: { value: new THREE.Vector2(.5, .5) },
       },
     });
     const m = new THREE.Mesh(new THREE.PlaneGeometry(h * asp, h, seg, seg), mat);
@@ -116,7 +135,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     const g = new THREE.Group();
     g.position.z = -i * SPACING;
     const bgT = tex['p:' + s.bg];
-    const bg = makePlane(bgT, 29, { dim: s.dim, vig: true, bend: true, near: 60, far: 150 });
+    const bg = makePlane(bgT, 33, { dim: s.dim, vig: true, bend: true, near: 60, far: 150 });
     bg.position.set(s.look * .4, 0, -BG_BACK);
     g.add(bg);
     const cuts = s.cuts.filter(c => tex['c:' + c.k]).map((c, j) => {
@@ -197,16 +216,18 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   stages[5].g.add(glow);
 
   // ---------- câmera ----------
-  const state = { u: 0, mx: 0, my: 0, vel: 0 };
-  const cur = { u: 0, mx: 0, my: 0, vel: 0 };
-  let mobile = false;
+  const state = { u: 0, mx: 0, my: 0, vel: 0, intro: 1 };
+  const cur = { u: 0, mx: 0, my: 0, vel: 0, intro: 1 };
+  const light = new THREE.Vector2(.5, .5);
+  let mobile = false, baseFov = 38;
 
   function resize() {
     const w = canvas.clientWidth || innerWidth, h = canvas.clientHeight || innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     mobile = w / h < .85;
-    camera.fov = mobile ? 39 : 38;
+    baseFov = mobile ? 39 : 38;
+    camera.fov = baseFov;
     camera.updateProjectionMatrix();
     // celular: a pintura de fundo cobre a tela (corta nas laterais) e as figuras vêm para perto do centro
     stages.forEach(st => st.cuts.forEach(m => {
@@ -241,12 +262,20 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     cur.mx += (state.mx - cur.mx) * (snap ? 1 : k * .5);
     cur.my += (state.my - cur.my) * (snap ? 1 : k * .5);
     cur.vel += (state.vel - cur.vel) * (snap ? 1 : k * .8);
+    cur.intro = state.intro;
 
     const c = camAt(cur.u);
     const back = mobile ? 2 : 0;
-    camera.position.set(c.look * .25 + cur.mx * 1.2, cur.my * .7 + 0, c.z + back);
-    tmp.set(c.look + cur.mx * .4, cur.my * .3 + 0, c.z - 40);
+    // abertura: a câmera chega de longe, descendo
+    const io = 1 - cur.intro, ie = io * io * (3 - 2 * io);
+    camera.position.set(c.look * .25 + cur.mx * 1.2, cur.my * .7 + ie * 4, c.z + back + ie * 46);
+    tmp.set(c.look + cur.mx * .4, cur.my * .3, c.z - 40);
     camera.lookAt(tmp);
+    camera.rotateZ(ie * .06 + Math.sin(c.t * Math.PI) * .025 * (c.i % 2 ? -1 : 1));
+    // no meio da travessia a lente abre um pouco: sensação de velocidade
+    camera.fov = baseFov + Math.sin(c.t * Math.PI) * 5 + ie * 6;
+    camera.updateProjectionMatrix();
+    light.set(.5 + cur.mx * .45, .5 + cur.my * .45);
 
     const bend = clamp(cur.vel * .035, -2.2, 2.2);
     const shift = Math.min(.012, Math.abs(cur.vel) * .00025);
@@ -255,17 +284,24 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     stages.forEach((st, i) => {
       const zg = st.g.position.z;
       const dBg = camera.position.z - (zg - BG_BACK);
-      st.bg.material.uniforms.uOpacity.value = clamp((dBg - 3) / 10);
-      st.bg.visible = dBg > 2.5 && dBg < 170;
+      st.bg.material.uniforms.uOpacity.value = clamp((dBg - 1) / 4);
+      st.bg.material.uniforms.uBurn.value = 1 - clamp((dBg - 4) / 26);
+      st.bg.material.uniforms.uLight.value = light;
+      st.bg.visible = dBg > 1 && dBg < 170;
       st.bg.material.uniforms.uBend.value = bend * 1.6;
       st.bg.material.uniforms.uShift.value = shift;
       st.cuts.forEach((m, j) => {
         const h = m.userData.home;
         const ph = m.userData.phase;
-        m.position.set(h.x + Math.sin(time * .35 + ph) * .25, h.y + Math.sin(time * .5 + ph) * .35, h.z);
-        m.rotation.z = Math.sin(time * .3 + ph) * .015;
         const dz = camera.position.z - (zg + h.z);
-        m.material.uniforms.uOpacity.value = clamp((dz - 2) / 7);
+        // chegada: as figuras deslizam de fora para dentro da cena enquanto a câmera se aproxima
+        const a = clamp(1 - (dz - 24) / 42), ae = 1 - Math.pow(1 - a, 3);
+        const sd = Math.sign(h.x) || 1;
+        m.position.set(h.x + sd * (1 - ae) * 9 + Math.sin(time * .35 + ph) * .25, h.y - (1 - ae) * 3 + Math.sin(time * .5 + ph) * .35, h.z);
+        m.rotation.set(0, -sd * (1 - ae) * .7, Math.sin(time * .3 + ph) * .015);
+        m.material.uniforms.uOpacity.value = clamp((dz - 1.5) / 3) * clamp(a * 1.6);
+        m.material.uniforms.uBurn.value = 1 - clamp((dz - 3) / 13);
+        m.material.uniforms.uLight.value = light;
         m.visible = dz > 1.5 && dz < 160;
         m.material.uniforms.uBend.value = bend;
         m.material.uniforms.uShift.value = shift;
@@ -277,6 +313,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
       const dz = camera.position.z - m.position.z;
       m.visible = dz > -2 && dz < 120;
       m.material.uniforms.uOpacity.value = clamp(dz / 6);
+      m.material.uniforms.uLight.value = light;
     });
 
     gold.material.uniforms.uTime.value = time;
@@ -303,6 +340,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   frame(0, true);
 
   return {
+    get progress() { return cur.u; },
     scenes: SCENES.length,
     set(o) { Object.assign(state, o); },
     pointer(x, y) { state.mx = x; state.my = y; },

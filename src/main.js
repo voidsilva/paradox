@@ -5,12 +5,76 @@
   As imagens são quadros do próprio vídeo (pinturas a óleo), algumas recortadas para flutuar.
   Roteiro: 7 cenas seguindo a narração do vídeo → página em papel com a "bondade forte".
 */
+import Lenis from 'lenis';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const params = new URLSearchParams(location.search);
 const STILL = params.has('still');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const finePointer = matchMedia('(pointer: fine)').matches;
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const easeIO = x => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const asset = u => (window.__ASSETS && window.__ASSETS[u]) || u;
+
+// ---------- texto quebrado em palavras e letras ----------
+function splitChars(root) {
+  let n = 0;
+  const label = root.textContent.replace(/\s+/g, ' ').trim();
+  const walk = node => {
+    [...node.childNodes].forEach(ch => {
+      if (ch.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        ch.textContent.split(/(\s+)/).forEach(part => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.append(' '); return; }
+          const w = document.createElement('span'); w.className = 'w'; w.setAttribute('aria-hidden', 'true');
+          [...part].forEach(c => { const sp = document.createElement('span'); sp.className = 'ch'; sp.textContent = c; sp.style.setProperty('--ci', n++); w.append(sp); });
+          frag.append(w);
+        });
+        ch.replaceWith(frag);
+      } else if (ch.nodeType === 1) walk(ch);
+    });
+  };
+  walk(root);
+  const sr = document.createElement('span'); sr.className = 'sr'; sr.textContent = label;
+  root.append(sr);
+  return [...root.querySelectorAll('.ch')];
+}
+function splitWords(root) {
+  const words = [];
+  const walk = node => [...node.childNodes].forEach(ch => {
+    if (ch.nodeType === 3) {
+      const frag = document.createDocumentFragment();
+      ch.textContent.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.append(part); return; }
+        const w = document.createElement('span'); w.className = 'lw'; w.textContent = part; words.push(w); frag.append(w);
+      });
+      ch.replaceWith(frag);
+    } else if (ch.nodeType === 1) walk(ch);
+  });
+  walk(root);
+  return words;
+}
+
+// ---------- rolagem suave ----------
+let lenis = null;
+if (!STILL && !reduced) {
+  lenis = new Lenis({ lerp: .09, wheelMultiplier: .9, touchMultiplier: 1.4 });
+  lenis.stop();
+  const tick = t => { lenis.raf(t); requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    const id = a.getAttribute('href');
+    const el = id === '#top' ? null : document.querySelector(id);
+    if (id !== '#top' && !el) return;
+    e.preventDefault();
+    lenis.scrollTo(el || 0, { offset: el ? -20 : 0, duration: 2.2 });
+  });
+}
 
 function detectTier() {
   const q = params.get('q');
@@ -24,12 +88,31 @@ function detectTier() {
 const tier = detectTier();
 
 // ---------- carregamento ----------
-const loader = $('#loader'), loadN = $('#loadN');
+const loader = $('#loader'), loadN = $('#loadN'), loadPic = $('#loadPic');
 let world = null;
+let introP = STILL || reduced ? 1 : 0;
+
+// enquanto carrega, as pinturas passam como num projetor
+const LOAD_PICS = ['p15-rua', 'p01-retrato', 'p09-caveira', 'p03-trem', 'p06-salao', 'p05-nastassia', 'p12-angustia', 'p07-flor', 'p19-brinde', 'p20-duas'];
+let picI = 0;
+const picTimer = loadPic && !reduced && !STILL ? setInterval(() => { loadPic.src = asset('img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.jpg'); }, 150) : 0;
+
 function reveal() {
+  clearInterval(picTimer);
   document.body.classList.remove('is-loading');
   loader.classList.add('out');
-  setTimeout(() => loader.remove(), 1000);
+  setTimeout(() => loader.remove(), 1700);
+  if (introP < 1) {
+    const t0 = performance.now() + 300, D = 2800;
+    if (world) world.set({ intro: 0 });
+    const step = now => {
+      introP = clamp((now - t0) / D);
+      if (world) world.set({ intro: easeOut(introP) });
+      updateWorld();
+      if (introP < 1) requestAnimationFrame(step); else if (lenis) lenis.start();
+    };
+    requestAnimationFrame(step);
+  } else if (lenis) lenis.start();
   onScroll();
 }
 
@@ -65,16 +148,30 @@ addEventListener('pointermove', e => {
 
 // ---------- ato 1: cenas ----------
 const worldEl = $('#world');
-const sts = $$('.st').map(el => ({ el, i: +el.dataset.st, lines: $$('.ln', el) }));
+const sts = $$('.st').map(el => ({
+  el, i: +el.dataset.st,
+  lines: $$('.ln', el).map(ln => ({ el: ln, chars: ln.closest('.st__t') && !reduced ? splitChars(ln) : null })),
+}));
 const LAST = 6, SPAN = 6.6;
 const idx = $$('#index li'), indexEl = $('#index');
 const hdr = $('#hdr'), cue = $('#cue');
 
 // sem 3D: a pintura da cena atual vira o fundo do palco
 const FALLBACK = ['p15-rua', 'p09-caveira', 'p03-trem', 'p06-salao', 'p12-angustia', 'p07-flor', 'p19-brinde'];
-const asset = u => (window.__ASSETS && window.__ASSETS[u]) || u;
 const stage = $('.stage');
 let fbCur = -1;
+
+// título: cada letra sobe por trás de uma máscara e sai por cima, em onda
+function charStyle(chars, inN, outN) {
+  const N = chars.length, st = Math.min(.07, .9 / N);
+  chars.forEach((c, k) => {
+    const pi = easeOut(clamp(inN * (1 + N * st) - k * st));
+    const po = easeIO(clamp(outN * (1 + N * st) - k * st));
+    const y = outN > 0 ? -po * 115 : (1 - pi) * 115;
+    const r = outN > 0 ? -po * 10 : (1 - pi) * 14;
+    c.style.transform = `translate3d(0,${y.toFixed(1)}%,0) rotate(${r.toFixed(1)}deg)`;
+  });
+}
 
 function lineStyle(el, inN, outN) {
   if (reduced) { el.style.opacity = Math.min(inN, 1 - outN); return; }
@@ -93,21 +190,23 @@ function updateWorld() {
   if (world) world.set({ u: Math.min(u, LAST) });
 
   for (const s of sts) {
-    const inV = s.i === 0 ? 1 : clamp((u - (s.i - .14)) / .16);
+    const inV = s.i === 0 ? clamp(introP * 1.25 - .2) : clamp((u - (s.i - .14)) / .16);
     const outV = s.i === LAST ? clamp((u - 6.42) / .14) : clamp((u - (s.i + .34)) / .12);
     const vis = inV > 0 && outV < 1;
     s.el.classList.toggle('vis', vis);
     if (!vis) continue;
     const L = s.lines.length, st = .14;
     s.lines.forEach((ln, n) => {
-      lineStyle(ln, clamp(inV * (1 + (L - 1) * st) - n * st), clamp(outV * (1 + (L - 1) * st) - (L - 1 - n) * st * .5));
+      const a = clamp(inV * (1 + (L - 1) * st) - n * st), b = clamp(outV * (1 + (L - 1) * st) - (L - 1 - n) * st * .5);
+      if (ln.chars) charStyle(ln.chars, a, b);
+      else lineStyle(ln.el, a, b);
     });
   }
   const cur = Math.min(LAST, Math.floor(u + .14));
   if (!world && cur !== fbCur) { fbCur = cur; stage.style.backgroundImage = `url(${asset('img/paint/' + FALLBACK[cur] + '.jpg')})`; }
   idx.forEach((li, k) => li.classList.toggle('on', k === cur));
   indexEl.classList.toggle('gone', p >= .985);
-  cue.style.opacity = u > .05 ? 0 : 1;
+  cue.style.opacity = u > .05 || introP < 1 ? 0 : 1;
 }
 
 // ---------- ato 2 ----------
@@ -122,9 +221,32 @@ function updateWorld() {
 const deck = $('#deck'), cards = $$('.dc', deck);
 cards.forEach((c, k) => c.style.setProperty('--i', (k - (cards.length - 1) / 2).toFixed(2)));
 
+// títulos da página: letras sobem quando entram na tela; o resto aparece em sequência
+$$('.big, .foot__t').forEach(h => { splitChars(h); h.classList.add('rv'); });
+$$('.kick, .note, .pick__btns, .foot .btn, .foot__cols p, .cast li, .frame').forEach(e => e.classList.add('up'));
+$$('.cast li').forEach((li, k) => li.style.setProperty('--d', k * 70 + 'ms'));
+$$('.foot__cols p').forEach((p, k) => p.style.setProperty('--d', k * 90 + 'ms'));
+const seen = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); seen.unobserve(e.target); }
+}), { rootMargin: '0px 0px -10% 0px' });
+$$('.rv, .up').forEach(e => (reduced || STILL ? e.classList.add('in') : seen.observe(e)));
+
+// parágrafo que acende palavra por palavra com a rolagem
+const lede = $('.lede'), ledeWords = splitWords(lede);
+// moldura do vídeo abre com a rolagem
+const frame = $('.frame'), frameImg = $('.player__face img');
+
 function updatePage() {
   const page = $('#page').getBoundingClientRect();
   hdr.classList.toggle('on-page', page.top < 40);
+  const lr = lede.getBoundingClientRect();
+  const lp = reduced ? 1 : clamp((innerHeight * .85 - lr.top) / (lr.height + innerHeight * .3));
+  const lit = lp * (ledeWords.length + 3);
+  ledeWords.forEach((w, k) => { w.style.opacity = (.14 + .86 * clamp(lit - k)).toFixed(2); });
+  const fr = frame.getBoundingClientRect();
+  const fp = reduced ? 1 : easeOut(clamp((innerHeight - fr.top) / (innerHeight * .75)));
+  frame.style.clipPath = `inset(${((1 - fp) * 12).toFixed(2)}% ${((1 - fp) * 16).toFixed(2)}% round ${(6 + (1 - fp) * 30).toFixed(1)}px)`;
+  if (frameImg) frameImg.style.scale = (1 + (1 - fp) * .3).toFixed(3);
   const d = deck.getBoundingClientRect();
   const open = reduced ? 1 : clamp((innerHeight * .95 - d.top) / (innerHeight * .6));
   deck.style.setProperty('--open', open.toFixed(3));
@@ -143,6 +265,36 @@ addEventListener('scroll', () => {
 }, { passive: true });
 addEventListener('resize', onScroll);
 onScroll();
+
+// cursor: ponto + anel que cresce sobre o que é clicável
+if (finePointer && !reduced && !STILL) {
+  const dot = document.createElement('div'), ring = document.createElement('div');
+  dot.className = 'cur'; ring.className = 'cur cur--ring';
+  document.body.append(dot, ring);
+  let x = -100, y = -100, rx = x, ry = y;
+  addEventListener('pointermove', e => {
+    x = e.clientX; y = e.clientY;
+    ring.classList.toggle('hot', !!e.target.closest('a, button, .dc, #cast li'));
+    document.body.classList.add('has-cur');
+  }, { passive: true });
+  document.addEventListener('pointerleave', () => document.body.classList.remove('has-cur'));
+  const follow = () => {
+    rx += (x - rx) * .17; ry += (y - ry) * .17;
+    dot.style.transform = `translate3d(${x}px,${y}px,0)`;
+    ring.style.transform = `translate3d(${rx.toFixed(1)}px,${ry.toFixed(1)}px,0)`;
+    requestAnimationFrame(follow);
+  };
+  follow();
+  // botões magnéticos
+  $$('.btn, .pill, .player__play').forEach(b => {
+    const host = b.classList.contains('player__play') ? b.parentElement : b;
+    host.addEventListener('pointermove', e => {
+      const r = b.getBoundingClientRect();
+      b.style.translate = `${((e.clientX - r.left - r.width / 2) * .28).toFixed(1)}px ${((e.clientY - r.top - r.height / 2) * .28).toFixed(1)}px`;
+    });
+    host.addEventListener('pointerleave', () => { b.style.translate = ''; });
+  });
+}
 
 // retrato que segue o cursor
 const peek = $('#peek');

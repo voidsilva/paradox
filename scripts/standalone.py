@@ -16,7 +16,10 @@ css = re.sub(r'url\(\.\./(fonts/[^)]+)\)', lambda m: f'url({data(m.group(1))})',
 
 # módulos: caminhos relativos viram especificadores do importmap
 mods = {'app/main.js': 'src/main.js', 'app/world/world.js': 'src/world/world.js'}
-imports = {'three': js_data((ROOT / 'vendor/three/three.module.min.js').read_text(encoding='utf-8'))}
+imports = {
+    'three': js_data((ROOT / 'vendor/three/three.module.min.js').read_text(encoding='utf-8')),
+    'lenis': js_data((ROOT / 'vendor/lenis/lenis.mjs').read_text(encoding='utf-8')),
+}
 for spec, path in mods.items():
     src = (ROOT / path).read_text(encoding='utf-8')
     base = spec.rsplit('/', 1)[0]

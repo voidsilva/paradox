@@ -13,7 +13,7 @@ As pinturas que aparecem no vídeo viram o próprio cenário 3D: cada cena tem u
 index.html              texto de todas as cenas e da página
 src/styles.css          cores, fontes, layout
 src/main.js             roteiro do scroll, animação do texto, cartas, elenco, player
-src/world/world.js      cena 3D (SCENES = pintura de fundo + recortes de cada cena)
+src/world/world.js      cena 3D (inclui a queima entre pinturas) (SCENES = pintura de fundo + recortes de cada cena)
 img/paint/              21 quadros do vídeo
 img/cut/                11 personagens recortados (fundo transparente)
 scripts/standalone.py   gera o arquivo único
