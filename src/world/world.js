@@ -153,7 +153,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   });
 
   // ---------- quadros soltos pelo caminho ----------
-  const nFill = HIGH ? 54 : 26;
+  const nFill = HIGH ? 34 : 22;
   const fillers = [];
   for (let i = 0; i < nFill; i++) {
     const k = PAINTS[(i * 5 + 3) % PAINTS.length];
@@ -201,10 +201,10 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     return pts;
   }
   const gold = dust(HIGH ? 1600 : 600, { x: 60, y: 30, z0: 30, z: SPACING * SCENES.length + 40 }, 0xe8c27a, 2.2, .25);
-  scene.add(gold);
+  gold.visible = false; // tela limpa: sem poeira
   const embers = dust(HIGH ? 500 : 220, { x: 34, y: 26, z0: 8, z: 24 }, 0xff6a2a, 3, 2.2);
   embers.position.z = stages[3].g.position.z;
-  scene.add(embers);
+  embers.visible = false;
 
   // luz da cena V: um disco suave atrás da figura
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(26, 26), new THREE.ShaderMaterial({
@@ -522,7 +522,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     });
 
     sparks.position.set(hotX, 0, hotZ);
-    sparks.material.uniforms.uAmt.value = Math.min(1, hot * 1.4);
+    sparks.material.uniforms.uAmt.value = Math.min(.6, hot * .8);
     sparks.material.uniforms.uW.value = hotW;
     sparks.material.uniforms.uTime.value = time;
     sparks.visible = hot > .01;

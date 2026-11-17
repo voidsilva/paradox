@@ -17,3 +17,5 @@
 **Voz dos textos:** frases curtas, afirmativas, ancoradas em fatos do romance (a troca de cruzes, o desmaio de Gánia, o sanatório, a pergunta de Ippolit). Nada de conselho genérico.
 
 **v4:** o fogo tem tempo próprio (~5 s por pintura): a tela arde parada e a câmera só atravessa quando o fogo abre passagem; o texto acompanha a câmera, não a barra. Atração principal entre o mundo e a página: "O rosto do paradoxo", Míchkin, Nastássia e Rogójin feitos de partículas com relevo (src/core/core.js), que explodem em brasa e se refazem até virar a palavra "idiota", que vira cinza.
+
+**v5 (tela limpa):** cada cena mostra só o título; sem índice lateral, sem poeira de pontos. A atração principal virou "O retrato que quebra": o quadro de Míchkin trinca como vidro a partir do rosto, os cacos dão uma volta inteira no ar (passando o verso de tela crua) e se juntam em Rogójin; na segunda quebra, em Nastássia; no fim voam contra a câmera. Uma malha só, animada no vertex shader.

@@ -144,12 +144,12 @@ function reveal() {
 })();
 
 // ---------- atração principal: o rosto do paradoxo ----------
-const coreEl = $('#core'), coreCanvas = $('#coreGl'), coreBar = $('#coreBar'), coreHint = $('#coreHint'), coreFlat = $('#coreFlat');
+const coreEl = $('#core'), coreCanvas = $('#coreGl'), coreFlat = $('#coreFlat');
 const caps = $$('.cap', coreEl);
 // janelas em que cada legenda fica na tela (progresso 0..1 da seção)
-const CAP_WIN = [[.05, .22], [.3, .46], [.54, .7], [.74, .88], [.9, 1.01]];
-const FLAT_IMG = ['p01-retrato', 'p05-nastassia', 'p03-trem', 'p03-trem', 'p03-trem'];
-const CORE_SEG = [[0, .08], [.2, .32], [.44, .56], [.68, .78], [.86, 1]];
+const CAP_WIN = [[.0, .1], [.43, .52], [.85, .91], [.92, 1.01]];
+const FLAT_IMG = ['p01-retrato', 'p16-olhar', 'p05-nastassia', 'p05-nastassia'];
+const CORE_SEG = [[-2, -1], [.12, .42], [.54, .84], [.9, 1]];
 let core = null, coreP = 0, coreHeat = 0;
 async function initCore() {
   try {
@@ -166,16 +166,13 @@ function updateCore() {
   const p = clamp(-r.top / (r.height - innerHeight));
   coreP = p;
   if (core) core.set({ p });
-  coreBar.style.transform = `scaleX(${p.toFixed(4)})`;
-  coreEl.classList.toggle('past-head', p > .06);
-  coreHint.style.opacity = p > .02 && p < .6 ? 1 : 0;
   caps.forEach((c, k) => c.classList.toggle('on', p >= CAP_WIN[k][0] && p < CAP_WIN[k][1]));
   let heat = 0;
   CORE_SEG.forEach(([a, b], k) => { if (k && p > a && p < b) heat = Math.sin((p - a) / (b - a) * Math.PI); });
   coreHeat = r.top < innerHeight && r.bottom > 0 ? heat : 0;
   if (!core) {
     const k = CAP_WIN.findIndex(([a, b]) => p >= a - .04 && p < b);
-    const img = asset('img/cut/' + FLAT_IMG[Math.max(0, k)] + '.webp');
+    const img = asset('img/paint/' + FLAT_IMG[Math.max(0, k)] + '.jpg');
     if (coreFlat.dataset.k !== img) { coreFlat.dataset.k = img; coreFlat.src = img; }
     coreFlat.style.opacity = p > .86 ? 0 : 1;
   }
