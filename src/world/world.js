@@ -156,7 +156,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   const nFill = HIGH ? 54 : 26;
   const fillers = [];
   for (let i = 0; i < nFill; i++) {
-    const k = PAINTS[(i * 7 + 3) % PAINTS.length];
+    const k = PAINTS[(i * 5 + 3) % PAINTS.length];
     const h = 2.8 + Math.random() * 4.2;
     const m = makePlane(tex['p:' + k], h, { frame: true, dim: .82, near: 30, far: 105 });
     const side = i % 2 ? 1 : -1;
@@ -164,6 +164,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     m.position.set(side * (14 + Math.random() * 14), -6 + Math.random() * 16, z);
     m.rotation.y = -side * (.25 + Math.random() * .35);
     m.rotation.z = (Math.random() - .5) * .08;
+    m.userData.ry = m.rotation.y; m.userData.rz = m.rotation.z;
     m.userData.phase = Math.random() * 6.28;
     m.userData.home = m.position.clone();
     scene.add(m);
@@ -215,15 +216,179 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   glow.position.set(-3, 2, -4);
   stages[5].g.add(glow);
 
+  // ---------- faíscas: saem da borda da pintura que está queimando ----------
+  const sparks = (() => {
+    const n = HIGH ? 900 : 360;
+    const geo = new THREE.BufferGeometry();
+    const p = new Float32Array(n * 3), a = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) a.set([Math.random() * 6.2832, Math.random(), Math.random()], i * 3);
+    geo.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    geo.setAttribute('aR', new THREE.BufferAttribute(a, 3));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
+      uniforms: { uBurn: { value: 0 }, uAmt: { value: 0 }, uTime: { value: 0 }, uPx: { value: renderer.getPixelRatio() }, uW: { value: 30 } },
+      vertexShader: `attribute vec3 aR; uniform float uBurn, uTime, uPx, uW; varying float vA;
+        void main(){
+          float life = fract(aR.y + uTime * (.35 + aR.z * .5));
+          float R = uBurn * uW * (.55 + aR.z * .5);
+          vec3 p = vec3(cos(aR.x) * R, sin(aR.x) * R * .62, 0.);
+          p += vec3(cos(aR.x) * life * 2.5, life * life * (3. + aR.z * 4.), life * (4. + aR.y * 10.));
+          p.x += sin(life * 9. + aR.x * 5.) * .4;
+          vec4 mv = modelViewMatrix * vec4(p, 1.);
+          vA = (1. - life) * smoothstep(0., .08, life);
+          gl_PointSize = clamp((1.2 + aR.z * 2.6) * uPx * 26. / -mv.z, 1., 14.);
+          gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `uniform float uAmt; varying float vA;
+        void main(){ float r = length(gl_PointCoord - .5); float a = exp(-r * r * 26.);
+          gl_FragColor = vec4(vec3(1., .55, .2) * a * vA * uAmt * 1.6 + vec3(1., .9, .7) * exp(-r * r * 120.) * vA * uAmt, 1.); }`,
+    });
+    const pts = new THREE.Points(geo, mat);
+    pts.frustumCulled = false; pts.renderOrder = 9;
+    scene.add(pts);
+    return pts;
+  })();
+
+  // ---------- cena III: notas de cem rublos caindo e pegando fogo ----------
+  const noteTex = (() => {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 240;
+    const g = c.getContext('2d');
+    const grd = g.createLinearGradient(0, 0, 512, 240);
+    grd.addColorStop(0, '#e6d6ad'); grd.addColorStop(.5, '#d4c193'); grd.addColorStop(1, '#c9b07c');
+    g.fillStyle = grd; g.fillRect(0, 0, 512, 240);
+    g.strokeStyle = 'rgba(74,52,30,.75)'; g.lineWidth = 3; g.strokeRect(12, 12, 488, 216);
+    g.lineWidth = 1; g.strokeRect(20, 20, 472, 200);
+    for (let i = 0; i < 46; i++) { g.beginPath(); g.ellipse(256, 120, 60 + i * 4, 30 + i * 2.1, 0, 0, 6.283); g.strokeStyle = `rgba(90,64,36,${.05 + (i % 3) * .02})`; g.stroke(); }
+    g.fillStyle = 'rgba(70,48,28,.9)'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = 'italic 700 64px "Bodoni Moda", Georgia, serif'; g.fillText('100', 82, 66); g.fillText('100', 430, 176);
+    g.font = '700 30px Georgia, serif'; g.fillText('СТО РУБЛЕЙ', 300, 112);
+    g.font = '400 15px Georgia, serif'; g.fillText('ГОСУДАРСТВЕННЫЙ КРЕДИТНЫЙ БИЛЕТЪ', 300, 150);
+    g.beginPath(); g.ellipse(150, 128, 44, 56, 0, 0, 6.283); g.fillStyle = 'rgba(120,90,58,.35)'; g.fill(); g.stroke();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.anisotropy = 4;
+    return t;
+  })();
+  const notes = (() => {
+    const n = HIGH ? 90 : 36;
+    const geo = new THREE.PlaneGeometry(2.6, 1.22, 8, 1);
+    const off = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) off.set([(Math.random() - .5) * 34, Math.random(), -9 + Math.random() * 15, Math.random()], i * 4);
+    geo.setAttribute('aOff', new THREE.InstancedBufferAttribute(off, 4));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, side: THREE.DoubleSide, depthWrite: false,
+      uniforms: { map: { value: noteTex }, uTime: { value: 0 }, uFog: { value: FOG }, uAmt: { value: 1 } },
+      vertexShader: `attribute vec4 aOff; uniform float uTime; varying vec2 vUv; varying float vY, vD, vS;
+        mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1.,0.,0., 0.,c,s, 0.,-s,c); }
+        mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0.,-s, 0.,1.,0., s,0.,c); }
+        mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,s,0., -s,c,0., 0.,0.,1.); }
+        void main(){
+          vUv = uv; vS = aOff.w;
+          float H = 30.;
+          float y = mod(aOff.y * H - uTime * (1.1 + aOff.w * .9), H) - H * .45;
+          vec3 p = position;
+          p.z += sin(uv.x * 3.14159 + uTime * 3. + aOff.w * 9.) * .22;
+          float t = uTime * (.8 + aOff.w) + aOff.w * 20.;
+          p = rotZ(sin(t) * .6) * rotX(t * 1.3) * rotY(sin(t * .7) * 1.2) * p;
+          vec3 w = vec3(aOff.x + sin(t * .5) * 1.5, y, aOff.z) + p;
+          vY = y;
+          vec4 mv = modelViewMatrix * vec4(w, 1.);
+          vD = -mv.z;
+          gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `uniform sampler2D map; uniform vec3 uFog; uniform float uAmt; varying vec2 vUv; varying float vY, vD, vS;
+        float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float nz(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+          return mix(mix(h(i), h(i+vec2(1.,0.)), f.x), mix(h(i+vec2(0.,1.)), h(i+1.), f.x), f.y); }
+        void main(){
+          vec3 c = texture2D(map, vUv).rgb;
+          float burn = clamp((-vY - 2.) / 9., 0., 1.);
+          float m = nz(vUv * vec2(9., 4.) + vS * 30.) * .7 + (1. - vUv.x) * .3;
+          float th = 1.05 - burn * 1.2;
+          if (m > th) discard;
+          c *= 1. - .85 * smoothstep(th - .14, th - .03, m);
+          c += vec3(1., .4, .08) * smoothstep(th - .05, th, m) * 1.6 * step(.01, burn);
+          c = mix(c, uFog, smoothstep(26., 70., vD));
+          gl_FragColor = vec4(c * .92, uAmt); }`,
+    });
+    const im = new THREE.InstancedMesh(geo, mat, n);
+    im.frustumCulled = false; im.renderOrder = 5;
+    stages[3].g.add(im);
+    return im;
+  })();
+
+  // ---------- cena V: feixes de luz ----------
+  const rays = new THREE.Group();
+  const rayMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    uniforms: { uTime: { value: 0 }, uA: { value: 1 } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
+    fragmentShader: `uniform float uTime, uA; varying vec2 vUv;
+      void main(){ float e = smoothstep(0., .5, vUv.x) * smoothstep(1., .5, vUv.x);
+        float l = smoothstep(1., .55, vUv.y) * smoothstep(0., .5, vUv.y);
+        float f = .7 + .3 * sin(uTime * 1.3 + vUv.y * 6.);
+        gl_FragColor = vec4(vec3(1., .88, .66) * e * e * l * f * .16 * uA, 1.); }`,
+  });
+  for (let i = 0; i < 6; i++) {
+    const r = new THREE.Mesh(new THREE.PlaneGeometry(3 + i * .9, 46), rayMat);
+    r.position.set(-12 + i * 3.6, 6, -6 + i * 1.2);
+    r.rotation.z = -.42 + i * .03;
+    r.userData.ph = i * 1.7;
+    rays.add(r);
+  }
+  stages[5].g.add(rays);
+
+  // ---------- final: os quadros soltos se juntam numa parede de museu ----------
+  {
+    const cols = 9, rows = 7, cw = 9.2, ch = 7.4;
+    const cells = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (c >= 3 && c <= 5 && r >= 2 && r <= 4) continue; // vão no meio: a última pintura
+      const x = (c - (cols - 1) / 2) * cw + (Math.random() - .5) * 1.2;
+      const y = (r - (rows - 1) / 2) * ch + (Math.random() - .5) * .9;
+      cells.push({ x, y, d: Math.hypot(x / cw, y / ch) });
+    }
+    cells.sort((a, b) => a.d - b.d);
+    const sz = stages[SCENES.length - 1].g.position.z;
+    fillers.forEach((m, i) => {
+      const cell = cells[i % cells.length];
+      const hgt = m.geometry.parameters.height;
+      m.userData.wall = new THREE.Vector3(cell.x, cell.y, sz - 10 - (i % 3) * .6);
+      m.userData.wallScale = (ch * (.62 + (i % 4) * .06)) / hgt;
+      m.userData.delay = Math.min(.45, cell.d * .09) + (i % 5) * .02;
+    });
+  }
+
+  // ---------- pós: lente (aberração, distorção, calor) ----------
+  const rt = new THREE.WebGLRenderTarget(2, 2, { samples: HIGH ? 4 : 0 });
+  const post = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+    depthTest: false, depthWrite: false,
+    uniforms: { tD: { value: rt.texture }, uCA: { value: 0 }, uWarp: { value: 0 }, uHaze: { value: 0 }, uTime: { value: 0 }, uFlash: { value: 0 } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }`,
+    fragmentShader: `uniform sampler2D tD; uniform float uCA, uWarp, uHaze, uTime, uFlash; varying vec2 vUv;
+      void main(){
+        vec2 d = vUv - .5; float r2 = dot(d, d);
+        vec2 uv = .5 + d * (1. - uWarp * r2 * .5);
+        uv += uHaze * .0045 * vec2(sin(uv.y * 70. + uTime * 7.), cos(uv.x * 55. + uTime * 6.));
+        vec2 o = d * uCA * (.35 + r2 * 3.);
+        vec3 c = vec3(texture2D(tD, uv + o).r, texture2D(tD, uv).g, texture2D(tD, uv - o).b);
+        c *= 1. - smoothstep(.18, .75, r2) * .55;
+        c += vec3(1., .5, .2) * uHaze * .06 * (1. - r2 * 2.);
+        c = mix(c, vec3(1., .94, .84), uFlash);
+        gl_FragColor = vec4(c, 1.); }`,
+  }));
+  post.frustumCulled = false;
+  const postScene = new THREE.Scene(); postScene.add(post);
+  const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
   // ---------- câmera ----------
   const state = { u: 0, mx: 0, my: 0, vel: 0, intro: 1 };
   const cur = { u: 0, mx: 0, my: 0, vel: 0, intro: 1 };
   const light = new THREE.Vector2(.5, .5);
+  const stats = { heat: 0, transit: 0, fin: 0, scene: 0 };
   let mobile = false, baseFov = 38;
 
   function resize() {
     const w = canvas.clientWidth || innerWidth, h = canvas.clientHeight || innerHeight;
     renderer.setSize(w, h, false);
+    const pr = renderer.getPixelRatio();
+    rt.setSize(Math.round(w * pr), Math.round(h * pr));
     camera.aspect = w / h;
     mobile = w / h < .85;
     baseFov = mobile ? 39 : 38;
@@ -268,7 +433,9 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     const back = mobile ? 2 : 0;
     // abertura: a câmera chega de longe, descendo
     const io = 1 - cur.intro, ie = io * io * (3 - 2 * io);
-    camera.position.set(c.look * .25 + cur.mx * 1.2, cur.my * .7 + ie * 4, c.z + back + ie * 46);
+    // final: depois da última cena a câmera recua e a parede inteira aparece
+    const fin = clamp((cur.u - (SCENES.length - 1) - .02) / .5), fe = ease(fin);
+    camera.position.set(c.look * .25 * (1 - fe) + cur.mx * 1.2, cur.my * .7 + ie * 4, c.z + back + ie * 46 + fe * (mobile ? 70 : 44));
     tmp.set(c.look + cur.mx * .4, cur.my * .3, c.z - 40);
     camera.lookAt(tmp);
     camera.rotateZ(ie * .06 + Math.sin(c.t * Math.PI) * .025 * (c.i % 2 ? -1 : 1));
@@ -281,11 +448,18 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     const shift = Math.min(.012, Math.abs(cur.vel) * .00025);
 
     // cenas: atravessar a pintura = ela se desfaz ao chegar perto
+    let hot = 0, hotZ = 0, hotX = 0, hotW = 30;
     stages.forEach((st, i) => {
+      // no recuo final, as cenas anteriores saem do caminho da câmera
+      st.g.visible = !(fin > 0 && i < SCENES.length - 1);
+      if (!st.g.visible) return;
       const zg = st.g.position.z;
       const dBg = camera.position.z - (zg - BG_BACK);
       st.bg.material.uniforms.uOpacity.value = clamp((dBg - 1) / 4);
-      st.bg.material.uniforms.uBurn.value = 1 - clamp((dBg - 4) / 26);
+      const bb = 1 - clamp((dBg - 4) / 26);
+      st.bg.material.uniforms.uBurn.value = bb;
+      const heat = bb * (1 - bb) * 4;
+      if (heat > hot) { hot = heat; hotZ = zg - BG_BACK + .3; hotX = st.bg.position.x; hotW = st.bg.geometry.parameters.width * .5; sparks.material.uniforms.uBurn.value = bb; }
       st.bg.material.uniforms.uLight.value = light;
       st.bg.visible = dBg > 1 && dBg < 170;
       st.bg.material.uniforms.uBend.value = bend * 1.6;
@@ -298,7 +472,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
         const a = clamp(1 - (dz - 24) / 42), ae = 1 - Math.pow(1 - a, 3);
         const sd = Math.sign(h.x) || 1;
         m.position.set(h.x + sd * (1 - ae) * 9 + Math.sin(time * .35 + ph) * .25, h.y - (1 - ae) * 3 + Math.sin(time * .5 + ph) * .35, h.z);
-        m.rotation.set(0, -sd * (1 - ae) * .7, Math.sin(time * .3 + ph) * .015);
+        m.rotation.set(-cur.my * .07, -sd * (1 - ae) * .7 + cur.mx * .16, Math.sin(time * .3 + ph) * .015);
         m.material.uniforms.uOpacity.value = clamp((dz - 1.5) / 3) * clamp(a * 1.6);
         m.material.uniforms.uBurn.value = 1 - clamp((dz - 3) / 13);
         m.material.uniforms.uLight.value = light;
@@ -308,19 +482,46 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
       });
     });
     fillers.forEach(m => {
-      const h = m.userData.home;
-      m.position.y = h.y + Math.sin(time * .4 + m.userData.phase) * .4;
+      const h = m.userData.home, wl = m.userData.wall;
+      const wf = ease(clamp((fin - m.userData.delay) / .5));
+      const fy = h.y + Math.sin(time * .4 + m.userData.phase) * .4 * (1 - wf);
+      m.position.set(h.x + (wl.x - h.x) * wf, fy + (wl.y - fy) * wf, h.z + (wl.z - h.z) * wf);
+      m.rotation.y = m.userData.ry * (1 - wf);
+      m.rotation.z = m.userData.rz * (1 - wf);
+      m.scale.setScalar(1 + (m.userData.wallScale - 1) * wf);
+      m.material.uniforms.uNear.value = 30 + fe * 55;
+      m.material.uniforms.uFar.value = 105 + fe * 90;
+      m.material.uniforms.uDim.value = .82 + wf * .12;
       const dz = camera.position.z - m.position.z;
       m.visible = dz > -2 && dz < 120;
       m.material.uniforms.uOpacity.value = clamp(dz / 6);
       m.material.uniforms.uLight.value = light;
     });
 
+    sparks.position.set(hotX, 0, hotZ);
+    sparks.material.uniforms.uAmt.value = Math.min(1, hot * 1.4);
+    sparks.material.uniforms.uW.value = hotW;
+    sparks.material.uniforms.uTime.value = time;
+    sparks.visible = hot > .01;
+    notes.material.uniforms.uTime.value = time;
+    rays.children.forEach(r => { r.rotation.z = -.42 + Math.sin(time * .25 + r.userData.ph) * .05; });
+    rayMat.uniforms.uTime.value = time;
     gold.material.uniforms.uTime.value = time;
     embers.material.uniforms.uTime.value = time;
     glow.material.uniforms.uA.value = .8 + Math.sin(time * .8) * .2;
 
+    const pu = post.material.uniforms;
+    const tr = Math.sin(c.t * Math.PI);
+    pu.uCA.value = Math.min(.03, Math.abs(cur.vel) * .0006) + tr * .014 + ie * .011;
+    pu.uWarp.value = tr * .9 + ie * .6 + fe * (1 - fe) * 1.2;
+    pu.uHaze.value = hot;
+    pu.uTime.value = time;
+    pu.uFlash.value = Math.max(0, hot - .85) * .8;
+    stats.heat = hot; stats.transit = tr; stats.fin = fe; stats.scene = c.t > .5 ? c.i + 1 : c.i;
+    renderer.setRenderTarget(rt);
     renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+    renderer.render(postScene, postCam);
   }
 
   let raf = 0, running = false, last = performance.now(), visible = true;
@@ -341,6 +542,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
 
   return {
     get progress() { return cur.u; },
+    stats,
     scenes: SCENES.length,
     set(o) { Object.assign(state, o); },
     pointer(x, y) { state.mx = x; state.my = y; },

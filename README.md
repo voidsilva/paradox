@@ -12,6 +12,7 @@ As pinturas que aparecem no vídeo viram o próprio cenário 3D: cada cena tem u
 ```
 index.html              texto de todas as cenas e da página
 src/styles.css          cores, fontes, layout
+src/sound.js            trilha gerada no navegador (Web Audio, sem arquivos)
 src/main.js             roteiro do scroll, animação do texto, cartas, elenco, player
 src/world/world.js      cena 3D (inclui a queima entre pinturas) (SCENES = pintura de fundo + recortes de cada cena)
 img/paint/              21 quadros do vídeo

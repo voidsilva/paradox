@@ -6,6 +6,7 @@
   Roteiro: 7 cenas seguindo a narração do vídeo → página em papel com a "bondade forte".
 */
 import Lenis from 'lenis';
+import { createSound } from 'app/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -118,7 +119,7 @@ function reveal() {
 
 (async () => {
   try { await document.fonts.ready; } catch (e) { /* segue */ }
-  if (tier === 'off') { $('#gl').hidden = true; stage.classList.add('flat'); reveal(); return; }
+  if (tier === 'off') { $('#gl').hidden = true; stage.classList.add('flat'); if (STILL) reveal(); else { clearInterval(picTimer); loader.classList.add('ready'); loadN.textContent = '32'; } return; }
   try {
     const { createWorld } = await import('./world/world.js');
     world = await createWorld({
@@ -132,8 +133,34 @@ function reveal() {
     $('#gl').hidden = true;
     stage.classList.add('flat');
   }
-  reveal();
+  if (STILL) { reveal(); return; }
+  clearInterval(picTimer);
+  loader.classList.add('ready'); loadN.textContent = '32';
+  $('#enterSnd').focus({ preventScroll: true });
 })();
+
+// ---------- trilha ----------
+const sound = createSound();
+const sndBtn = $('#sndBtn');
+function setSound(v) {
+  if (v) sound.start(); else sound.stop();
+  sndBtn.setAttribute('aria-pressed', v);
+  document.body.classList.toggle('snd-on', v);
+}
+$('#enterSnd').addEventListener('click', () => { setSound(true); reveal(); });
+$('#enterMute').addEventListener('click', () => reveal());
+sndBtn.addEventListener('click', () => setSound(!sound.on));
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && sound.on) { sound.stop(); sound.wasOn = true; }
+  else if (!document.hidden && sound.wasOn) { sound.wasOn = false; setSound(true); }
+});
+let curU = 0;
+setInterval(() => {
+  if (!sound.on) return;
+  const w = world && world.stats;
+  sound.update(w ? { heat: w.heat, transit: w.transit, fin: w.fin, scene: w.scene }
+    : { heat: 0, transit: 0, fin: clamp((curU - 6) / .5), scene: Math.min(LAST, Math.round(curU)) });
+}, 80);
 
 // ---------- menu ----------
 const menuBtn = $('#menuBtn'), menu = $('#menu');
@@ -187,7 +214,8 @@ function updateWorld() {
   const r = worldEl.getBoundingClientRect();
   const p = clamp(-r.top / (r.height - innerHeight));
   const u = p * SPAN;
-  if (world) world.set({ u: Math.min(u, LAST) });
+  curU = u;
+  if (world) world.set({ u: Math.min(u, SPAN) });
 
   for (const s of sts) {
     const inV = s.i === 0 ? clamp(introP * 1.25 - .2) : clamp((u - (s.i - .14)) / .16);
@@ -219,11 +247,15 @@ function updateWorld() {
 }
 
 const deck = $('#deck'), cards = $$('.dc', deck);
+cards.forEach(c => {
+  c.addEventListener('click', () => { if (!finePointer) c.classList.toggle('flip'); });
+  c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.classList.toggle('flip'); } });
+});
 cards.forEach((c, k) => c.style.setProperty('--i', (k - (cards.length - 1) / 2).toFixed(2)));
 
 // títulos da página: letras sobem quando entram na tela; o resto aparece em sequência
 $$('.big, .foot__t').forEach(h => { splitChars(h); h.classList.add('rv'); });
-$$('.kick, .note, .pick__btns, .foot .btn, .foot__cols p, .cast li, .frame').forEach(e => e.classList.add('up'));
+$$('.kick, .note, .pick__btns, .foot .btn, .foot__q, .foot__cols p, .cast li, .frame').forEach(e => e.classList.add('up'));
 $$('.cast li').forEach((li, k) => li.style.setProperty('--d', k * 70 + 'ms'));
 $$('.foot__cols p').forEach((p, k) => p.style.setProperty('--d', k * 90 + 'ms'));
 const seen = new IntersectionObserver(es => es.forEach(e => {
@@ -306,8 +338,8 @@ $$('#cast li').forEach(li => {
 
 // a pergunta do vídeo
 const ANS = {
-  b: 'Real, rara e poderosa: é assim que o vídeo descreve a bondade de Míchkin. Mas Dostoiévski não deixa a leitura terminar em conforto. Sem discernimento e firmeza, ela fracassa justo onde mais queria fazer o bem.',
-  i: 'Talvez. Míchkin não sabe dizer não nem interromper ciclos destrutivos. Mesmo assim, o romance não ridiculariza a bondade: mostra que ela precisa de força, critério e limite para não virar alimento do caos.',
+  b: 'Dostoiévski queria escrever “um homem positivamente belo”, o mais perto de Cristo que teve coragem. E termina o livro com esse homem de volta ao sanatório, sem reconhecer ninguém. A santidade dele era verdadeira. Só não salvou uma única pessoa naquela casa.',
+  i: 'O apelido é cruel, e o livro sabe disso: Míchkin enxerga o que ninguém mais vê. O que falta a ele não é inteligência. É coragem de agir sobre o que vê, de escolher uma pessoa, de dizer não a outra.',
 };
 $$('[data-pick]').forEach(b => b.addEventListener('click', () => {
   $$('[data-pick]').forEach(x => x.setAttribute('aria-pressed', x === b));
