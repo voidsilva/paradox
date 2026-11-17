@@ -115,11 +115,14 @@ function reveal() {
     requestAnimationFrame(step);
   } else if (lenis) lenis.start();
   onScroll();
+  // enquanto há 3D, o texto acompanha a câmera a cada quadro
+  const follow = () => { if (world) updateWorld(); requestAnimationFrame(follow); };
+  if (world && !STILL) requestAnimationFrame(follow);
 }
 
 (async () => {
   try { await document.fonts.ready; } catch (e) { /* segue */ }
-  if (tier === 'off') { $('#gl').hidden = true; stage.classList.add('flat'); if (STILL) reveal(); else { clearInterval(picTimer); loader.classList.add('ready'); loadN.textContent = '32'; } return; }
+  if (tier === 'off') { $('#gl').hidden = true; stage.classList.add('flat'); coreEl.classList.add('flat'); if (STILL) reveal(); else { clearInterval(picTimer); loader.classList.add('ready'); loadN.textContent = '32'; } return; }
   try {
     const { createWorld } = await import('./world/world.js');
     world = await createWorld({
@@ -133,11 +136,61 @@ function reveal() {
     $('#gl').hidden = true;
     stage.classList.add('flat');
   }
+  await initCore();
   if (STILL) { reveal(); return; }
   clearInterval(picTimer);
   loader.classList.add('ready'); loadN.textContent = '32';
   $('#enterSnd').focus({ preventScroll: true });
 })();
+
+// ---------- atração principal: o rosto do paradoxo ----------
+const coreEl = $('#core'), coreCanvas = $('#coreGl'), coreBar = $('#coreBar'), coreHint = $('#coreHint'), coreFlat = $('#coreFlat');
+const caps = $$('.cap', coreEl);
+// janelas em que cada legenda fica na tela (progresso 0..1 da seção)
+const CAP_WIN = [[.05, .22], [.3, .46], [.54, .7], [.74, .88], [.9, 1.01]];
+const FLAT_IMG = ['p01-retrato', 'p05-nastassia', 'p03-trem', 'p03-trem', 'p03-trem'];
+const CORE_SEG = [[0, .08], [.2, .32], [.44, .56], [.68, .78], [.86, 1]];
+let core = null, coreP = 0, coreHeat = 0;
+async function initCore() {
+  try {
+    const { createCore } = await import('./core/core.js');
+    core = await createCore({ canvas: coreCanvas, tier, still: STILL, asset });
+    window.__core = core;
+  } catch (e) {
+    console.warn('Sem partículas:', e);
+    coreCanvas.hidden = true; coreEl.classList.add('flat');
+  }
+}
+function updateCore() {
+  const r = coreEl.getBoundingClientRect();
+  const p = clamp(-r.top / (r.height - innerHeight));
+  coreP = p;
+  if (core) core.set({ p });
+  coreBar.style.transform = `scaleX(${p.toFixed(4)})`;
+  coreEl.classList.toggle('past-head', p > .06);
+  coreHint.style.opacity = p > .02 && p < .6 ? 1 : 0;
+  caps.forEach((c, k) => c.classList.toggle('on', p >= CAP_WIN[k][0] && p < CAP_WIN[k][1]));
+  let heat = 0;
+  CORE_SEG.forEach(([a, b], k) => { if (k && p > a && p < b) heat = Math.sin((p - a) / (b - a) * Math.PI); });
+  coreHeat = r.top < innerHeight && r.bottom > 0 ? heat : 0;
+  if (!core) {
+    const k = CAP_WIN.findIndex(([a, b]) => p >= a - .04 && p < b);
+    const img = asset('img/cut/' + FLAT_IMG[Math.max(0, k)] + '.webp');
+    if (coreFlat.dataset.k !== img) { coreFlat.dataset.k = img; coreFlat.src = img; }
+    coreFlat.style.opacity = p > .86 ? 0 : 1;
+  }
+}
+{
+  const setPtr = (e, active) => {
+    if (!core) return;
+    const rc = coreCanvas.getBoundingClientRect();
+    core.set({ mx: ((e.clientX - rc.left) / rc.width - .5) * 2, my: -((e.clientY - rc.top) / rc.height - .5) * 2, active });
+  };
+  coreCanvas.addEventListener('pointermove', e => setPtr(e, true), { passive: true });
+  coreCanvas.addEventListener('pointerdown', e => setPtr(e, true), { passive: true });
+  coreCanvas.addEventListener('pointerleave', e => setPtr(e, false));
+  coreCanvas.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setPtr(e, false); });
+}
 
 // ---------- trilha ----------
 const sound = createSound();
@@ -158,8 +211,12 @@ let curU = 0;
 setInterval(() => {
   if (!sound.on) return;
   const w = world && world.stats;
-  sound.update(w ? { heat: w.heat, transit: w.transit, fin: w.fin, scene: w.scene }
-    : { heat: 0, transit: 0, fin: clamp((curU - 6) / .5), scene: Math.min(LAST, Math.round(curU)) });
+  const o = w ? { heat: w.heat, transit: w.transit, fin: w.fin, scene: w.scene }
+    : { heat: 0, transit: 0, fin: clamp((curU - 6) / .5), scene: Math.min(LAST, Math.round(curU)) };
+  // na atração principal: cada troca de rosto é uma explosão de brasa
+  const cr = coreEl.getBoundingClientRect();
+  if (cr.top < innerHeight * .5 && cr.bottom > innerHeight * .5) { o.heat = coreHeat; o.transit = coreHeat * .8; o.scene = 7 + CORE_SEG.findIndex(([a, b]) => coreP < b); o.fin = coreP > .86 ? 1 : 0; }
+  sound.update(o);
 }, 80);
 
 // ---------- menu ----------
@@ -213,9 +270,11 @@ function lineStyle(el, inN, outN) {
 function updateWorld() {
   const r = worldEl.getBoundingClientRect();
   const p = clamp(-r.top / (r.height - innerHeight));
-  const u = p * SPAN;
+  const su = p * SPAN;
+  if (world) world.set({ u: Math.min(su, SPAN) });
+  // o texto segue a câmera (que espera o fogo), não a barra de rolagem
+  const u = world && !STILL ? world.progress : su;
   curU = u;
-  if (world) world.set({ u: Math.min(u, SPAN) });
 
   for (const s of sts) {
     const inV = s.i === 0 ? clamp(introP * 1.25 - .2) : clamp((u - (s.i - .14)) / .16);
@@ -287,6 +346,7 @@ function updatePage() {
 let lastY = scrollY, ticking = false;
 function onScroll() {
   updateWorld();
+  updateCore();
   updatePage();
   const dy = scrollY - lastY; lastY = scrollY;
   if (world && !reduced) world.kick(dy);

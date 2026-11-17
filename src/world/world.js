@@ -87,7 +87,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   const HIGH = tier === 'high';
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: HIGH, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: still });
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // trabalhamos direto em sRGB
-  renderer.setPixelRatio(HIGH ? Math.min(devicePixelRatio || 1, 1.75) : 1);
+  renderer.setPixelRatio(HIGH ? Math.min(devicePixelRatio || 1, 2) : Math.min(devicePixelRatio || 1, 1.25));
   const FOG = new THREE.Color(0x0d0907);
   renderer.setClearColor(FOG, 1);
 
@@ -101,7 +101,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   const tex = {};
   const resolve = u => (window.__ASSETS && window.__ASSETS[u]) || base + u;
   const load = (key, url) => new Promise(res => loader.load(resolve(url), t => {
-    t.colorSpace = THREE.NoColorSpace; t.anisotropy = 4; t.generateMipmaps = true;
+    t.colorSpace = THREE.NoColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy ? Math.min(8, renderer.capabilities.getMaxAnisotropy()) : 4; t.generateMipmaps = true;
     tex[key] = t; onProgress(++done / total); res();
   }, undefined, () => { onProgress(++done / total); res(); }));
   await Promise.all([
@@ -382,6 +382,11 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   const cur = { u: 0, mx: 0, my: 0, vel: 0, intro: 1 };
   const light = new THREE.Vector2(.5, .5);
   const stats = { heat: 0, transit: 0, fin: 0, scene: 0 };
+  // fogo com tempo próprio: cada pintura leva BURN_T segundos para queimar,
+  // e a câmera só atravessa quando o fogo já abriu passagem
+  const BURN_T = 5, LASTI = SCENES.length - 1;
+  const burns = SCENES.map(() => 0);
+  let eff = 0;
   let mobile = false, baseFov = 38;
 
   function resize() {
@@ -429,12 +434,30 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     cur.vel += (state.vel - cur.vel) * (snap ? 1 : k * .8);
     cur.intro = state.intro;
 
-    const c = camAt(cur.u);
+    const target = cur.u;
+    if (snap) {
+      eff = target;
+      burns.forEach((_, i) => { const f = target - i; burns[i] = f >= 1 ? 1 : f > .42 ? .42 + .58 * clamp((f - .42) / .58) : 0; });
+    } else {
+      burns.forEach((b, i) => {
+        if (i >= LASTI) return;
+        if (target > i + .42 && eff >= i + .4) burns[i] = Math.min(1, b + dt / BURN_T);
+        else if (target < i + .42) burns[i] = Math.max(0, b - dt / 1.3);
+      });
+      let limit = Infinity;
+      for (let i = 0; i < LASTI; i++) {
+        const cap = i + .42 + .58 * clamp((burns[i] - .42) / .58);
+        if (cap < i + 1 - 1e-4) { limit = cap; break; }
+      }
+      eff += (Math.min(target, limit) - eff) * k;
+    }
+
+    const c = camAt(eff);
     const back = mobile ? 2 : 0;
     // abertura: a câmera chega de longe, descendo
     const io = 1 - cur.intro, ie = io * io * (3 - 2 * io);
     // final: depois da última cena a câmera recua e a parede inteira aparece
-    const fin = clamp((cur.u - (SCENES.length - 1) - .02) / .5), fe = ease(fin);
+    const fin = clamp((eff - (SCENES.length - 1) - .02) / .5), fe = ease(fin);
     camera.position.set(c.look * .25 * (1 - fe) + cur.mx * 1.2, cur.my * .7 + ie * 4, c.z + back + ie * 46 + fe * (mobile ? 70 : 44));
     tmp.set(c.look + cur.mx * .4, cur.my * .3, c.z - 40);
     camera.lookAt(tmp);
@@ -456,7 +479,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
       const zg = st.g.position.z;
       const dBg = camera.position.z - (zg - BG_BACK);
       st.bg.material.uniforms.uOpacity.value = clamp((dBg - 1) / 4);
-      const bb = 1 - clamp((dBg - 4) / 26);
+      const bb = i < LASTI ? burns[i] : 0;
       st.bg.material.uniforms.uBurn.value = bb;
       const heat = bb * (1 - bb) * 4;
       if (heat > hot) { hot = heat; hotZ = zg - BG_BACK + .3; hotX = st.bg.position.x; hotW = st.bg.geometry.parameters.width * .5; sparks.material.uniforms.uBurn.value = bb; }
@@ -474,7 +497,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
         m.position.set(h.x + sd * (1 - ae) * 9 + Math.sin(time * .35 + ph) * .25, h.y - (1 - ae) * 3 + Math.sin(time * .5 + ph) * .35, h.z);
         m.rotation.set(-cur.my * .07, -sd * (1 - ae) * .7 + cur.mx * .16, Math.sin(time * .3 + ph) * .015);
         m.material.uniforms.uOpacity.value = clamp((dz - 1.5) / 3) * clamp(a * 1.6);
-        m.material.uniforms.uBurn.value = 1 - clamp((dz - 3) / 13);
+        m.material.uniforms.uBurn.value = Math.max(1 - clamp((dz - 3) / 13), i < LASTI ? clamp((burns[i] - .3) / .55) : 0);
         m.material.uniforms.uLight.value = light;
         m.visible = dz > 1.5 && dz < 160;
         m.material.uniforms.uBend.value = bend;
@@ -541,7 +564,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   frame(0, true);
 
   return {
-    get progress() { return cur.u; },
+    get progress() { return eff; },
     stats,
     scenes: SCENES.length,
     set(o) { Object.assign(state, o); },

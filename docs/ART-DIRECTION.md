@@ -15,3 +15,5 @@
 **Trilha:** gerada ao vivo em Ré menor (Ré m, Si♭, Sol m, Lá): cordas graves que abrem o filtro nas travessias, piano esparso com eco longo, sino grave a cada cena nova, estalos de fogo proporcionais à queima, e Ré maior no final.
 
 **Voz dos textos:** frases curtas, afirmativas, ancoradas em fatos do romance (a troca de cruzes, o desmaio de Gánia, o sanatório, a pergunta de Ippolit). Nada de conselho genérico.
+
+**v4:** o fogo tem tempo próprio (~5 s por pintura): a tela arde parada e a câmera só atravessa quando o fogo abre passagem; o texto acompanha a câmera, não a barra. Atração principal entre o mundo e a página: "O rosto do paradoxo", Míchkin, Nastássia e Rogójin feitos de partículas com relevo (src/core/core.js), que explodem em brasa e se refazem até virar a palavra "idiota", que vira cinza.

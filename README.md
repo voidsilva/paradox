@@ -14,6 +14,7 @@ index.html              texto de todas as cenas e da página
 src/styles.css          cores, fontes, layout
 src/sound.js            trilha gerada no navegador (Web Audio, sem arquivos)
 src/main.js             roteiro do scroll, animação do texto, cartas, elenco, player
+src/core/core.js        atração principal (rostos de partículas)
 src/world/world.js      cena 3D (inclui a queima entre pinturas) (SCENES = pintura de fundo + recortes de cada cena)
 img/paint/              21 quadros do vídeo
 img/cut/                11 personagens recortados (fundo transparente)

@@ -155,6 +155,40 @@ body.has-cur .cur { opacity: 1; }
 @keyframes pull { 0% { transform: scaleX(0); } 60% { transform: scaleX(1); } 100% { transform: scaleX(1); opacity: 0; } }
 
 /* ===== Ato 2: papel ===== */
+/* ===== Atração principal ===== */
+.core { position: relative; height: 560vh; background: var(--night); }
+.core__stage { position: sticky; top: 0; height: 100svh; overflow: hidden;
+  background: radial-gradient(60% 70% at 62% 48%, #2a170c 0%, #160d07 45%, var(--night) 80%); }
+.core__stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(90% 70% at 15% 90%, rgba(13, 9, 7, .7), transparent 60%); }
+#coreGl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
+.core__flat { display: none; position: absolute; right: 8vw; bottom: 0; height: 88%; object-fit: contain; transition: opacity .8s; }
+.core.flat .core__flat { display: block; }
+.core__head { position: absolute; z-index: 2; left: var(--gut); top: 96px; color: var(--bone); pointer-events: none; transition: opacity .8s var(--ease), transform 1s var(--ease); }
+.core__head .mono { color: var(--gold); margin: 0 0 10px; }
+.core__head h2 { margin: 0; font: 700 clamp(30px, 3.4vw, 54px)/.9 var(--f-sans); letter-spacing: -.04em; }
+.core__head h2 .sw { font-weight: 400; }
+.core.past-head .core__head { opacity: 0; transform: translateY(-30px); }
+.cap { position: absolute; z-index: 2; left: calc(var(--gut) + 0px); bottom: 12vh; max-width: min(460px, 86vw); color: var(--bone); pointer-events: none; }
+.cap > * { opacity: 0; transform: translate3d(0, 40px, 0); filter: blur(8px); transition: opacity .7s var(--ease), transform 1s var(--ease), filter .8s var(--ease); }
+.cap.on > * { opacity: 1; transform: none; filter: none; }
+.cap.on > :nth-child(2) { transition-delay: .08s; } .cap.on > :nth-child(3) { transition-delay: .16s; }
+.cap .mono { color: var(--gold); margin: 0 0 14px; }
+.cap h3 { margin: 0; font: 700 clamp(54px, 7vw, 120px)/.86 var(--f-sans); letter-spacing: -.05em; }
+.cap h3 .sw { font-weight: 400; }
+.cap p:not(.mono) { margin: 18px 0 0; font: 400 clamp(17px, 1.35vw, 21px)/1.4 var(--f-serif); color: var(--bone-2); }
+.cap--c { left: 50%; transform: translateX(-50%); text-align: center; bottom: 14vh; max-width: min(620px, 90vw); }
+.cap--c h3 { font-size: clamp(42px, 5.6vw, 96px); }
+.core__hint { position: absolute; z-index: 2; right: var(--gut); bottom: 30px; color: var(--bone-2); transition: opacity .6s; }
+.core__bar { position: absolute; z-index: 2; left: var(--gut); right: var(--gut); top: 74px; height: 1px; background: rgba(241, 232, 216, .14); }
+.core__bar i { position: absolute; inset: 0; background: var(--gold); transform-origin: left; transform: scaleX(0); }
+@media (max-width: 860px) {
+  .core__head { top: 84px; }
+  .cap { bottom: 7vh; }
+  .cap h3 { font-size: clamp(46px, 13vw, 80px); }
+  .core__hint { left: var(--gut); right: auto; bottom: 14px; }
+  .core__flat { right: 0; left: 0; margin: auto; height: 62%; bottom: 22%; }
+}
+
 .page { position: relative; z-index: 3; background: var(--paper); color: var(--ink); margin-top: -1px; overflow-x: clip; }
 .tear { position: absolute; left: 0; right: 0; top: -38px; height: 40px; background: var(--paper); }
 .page section { padding: clamp(90px, 12vw, 170px) var(--gut) 0; }
