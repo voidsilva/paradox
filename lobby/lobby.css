@@ -112,3 +112,28 @@ body:not(.flat) .doors:focus-within { left: var(--gut); bottom: 24px; }
 body.flash .brand { animation: snap 1.2s var(--ease); }
 @keyframes snap { 0% { filter: blur(6px); letter-spacing: .3em; opacity: .2; } 100% { filter: none; letter-spacing: -.05em; opacity: 1; } }
 body.intro .tag, body.intro .top__meta { opacity: 0 !important; }
+
+/* som: botão discreto embaixo do estado */
+.top { align-items: flex-start; }
+.snd { position: fixed; z-index: 6; right: var(--gut); top: 58px; pointer-events: auto; display: flex; align-items: center; gap: 9px; padding: 7px 12px 7px 10px; border-radius: 99px; border: 1px solid rgba(241, 236, 228, .18); background: rgba(12, 10, 11, .35); color: var(--bone-2); cursor: pointer; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transition: color .3s, border-color .3s, opacity .5s; }
+.snd:hover, .snd[aria-pressed="true"] { color: var(--bone); border-color: rgba(241, 236, 228, .45); }
+.snd i { display: flex; align-items: flex-end; gap: 2px; height: 10px; }
+.snd b { width: 2px; height: 3px; background: currentColor; border-radius: 1px; transition: height .3s; }
+.snd[aria-pressed="true"] b { animation: eq 1s ease-in-out infinite alternate; }
+.snd[aria-pressed="true"] b:nth-child(2) { animation-delay: -.3s; } .snd[aria-pressed="true"] b:nth-child(3) { animation-delay: -.7s; } .snd[aria-pressed="true"] b:nth-child(4) { animation-delay: -.5s; }
+@keyframes eq { from { height: 2px; } to { height: 10px; } }
+body.is-loading .snd, body.leaving .snd, body.flat .snd { opacity: 0; pointer-events: none; }
+
+/* cursor: um anel que segue a mão e vira "Entrar" sobre uma porta */
+.cur { display: none; }
+@media (pointer: fine) {
+  .cur { display: grid; place-items: center; position: fixed; z-index: 3; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; border: 1px solid rgba(241, 236, 228, .55); pointer-events: none; opacity: 0; will-change: transform; transition: width .45s var(--ease), height .45s var(--ease), margin .45s var(--ease), background .35s, border-color .35s, opacity .4s; }
+  .cur span { opacity: 0; color: #120d0b; font-size: 10px; transition: opacity .25s; white-space: nowrap; }
+  body.cur-on .cur { opacity: 1; }
+  body.hovering .cur { width: 70px; height: 70px; margin: -35px 0 0 -35px; background: var(--ctone, var(--bone)); border-color: transparent; }
+  body.hovering .cur span { opacity: 1; transition-delay: .12s; }
+  body.dragging .cur { width: 18px; height: 18px; margin: -9px 0 0 -9px; }
+  body.leaving .cur, body.is-loading .cur, body.flat .cur { opacity: 0; }
+}
+@media (max-width: 760px) { .snd { top: auto; bottom: calc(18px + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion: reduce) { .snd[aria-pressed="true"] b { animation: none; height: 8px; } }

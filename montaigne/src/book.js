@@ -386,11 +386,11 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
   const LW = low ? 640 : 1024;
   const SW = W * .92;                       // largura do cenário
   function backdrop(img) {
-    const h = Math.round(LW * .56 / SW), c = cv(LW, h), g = c.getContext('2d');
+    const h = Math.round(LW * .8 / SW), c = cv(LW, h), g = c.getContext('2d');
     deckle(g, 6, 6, LW - 12, h - 12, 6); g.fillStyle = '#f3efe6'; g.fill();
     g.save(); deckle(g, 22, 22, LW - 44, h - 44, 3); g.clip(); cover(g, img, 22, 22, LW - 44, h - 44, .5, .35); g.restore();
     tooth(g, LW, h, .14);
-    return { c, w: SW * .9, h: .56 };
+    return { c, w: SW * .9, h: .8 };
   }
   function hill(img, pal, hh, m, seed) {
     const h = Math.round(LW * hh / SW), c = cv(LW, h), g = c.getContext('2d');
@@ -412,7 +412,7 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
     return { c, w: SW * (.86 + seed * .03), h: hh };
   }
   function arch(i, pg) {
-    const hh = .7, h = Math.round(LW * hh / SW), c = cv(LW, h), g = c.getContext('2d');
+    const hh = .96, h = Math.round(LW * hh / SW), c = cv(LW, h), g = c.getContext('2d');
     deckle(g, 4, 4, LW - 8, h - 8, 4);
     const pgr = g.createLinearGradient(0, 0, 0, h); pgr.addColorStop(0, '#f5f1e8'); pgr.addColorStop(1, '#e9e3d6');
     g.fillStyle = pgr; g.fill();
@@ -444,8 +444,8 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
     const img = imgs['paint/' + s.bg + '.jpg'], pal = palette(img), pg = pages[i] || {};
     const defs = [
       { ...backdrop(img), z: -.3 },
-      { ...hill(img, pal, .2, 1.05, .3), z: -.17 },
-      { ...hill(img, pal, .14, .8, .9), z: -.05 },
+      { ...hill(img, pal, .3, 1.05, .3), z: -.17 },
+      { ...hill(img, pal, .2, .8, .9), z: -.05 },
       { ...arch(i, pg), z: .14 },
     ];
     const layers = defs.map((d, j) => {
@@ -635,7 +635,7 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * asp;
     let dist = half / (tanH * Math.max(.05, size));
     // no celular, o livro também precisa caber na altura de cima
-    tgt.set(cx + pointer.sx * .05, 0, -pointer.sy * .04);
+    tgt.set(cx + pointer.sx * .05, .2 * open * intro * (1 - fin), -pointer.sy * .04);
     const yaw = pointer.sx * .06, pitch = el + pointer.sy * .035;
     cpos.set(tgt.x + Math.sin(yaw) * Math.cos(pitch) * dist, Math.sin(pitch) * dist, tgt.z + Math.cos(yaw) * Math.cos(pitch) * dist);
     camera.position.copy(cpos); camera.lookAt(tgt);

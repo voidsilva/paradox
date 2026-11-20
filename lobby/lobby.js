@@ -22,10 +22,41 @@ const PORTALS = [
 ];
 
 let lobby = null;
+import { createLobbySound } from 'lobby/sound.js';
+const sound = createLobbySound();
+const sndBtn = $('#snd');
+const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
+function setSound(v) {
+  if (v) sound.start(); else sound.stop();
+  sndBtn.setAttribute('aria-pressed', v);
+  store('paradoxo-som', v ? '1' : '0');
+}
+sndBtn.addEventListener('click', () => setSound(!sound.on));
+// quem já ligou o som volta com ele: liga no primeiro toque (o navegador só deixa assim)
+if (store('paradoxo-som') === '1') addEventListener('pointerdown', () => { if (!sound.on) setSound(true); }, { once: true, capture: true });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && sound.on) { sound.stop(); sound.was = true; }
+  else if (!document.hidden && sound.was) { sound.was = false; setSound(true); }
+});
+
+// cursor que segue a mão com atraso
+const cur = $('#cur'), curTxt = cur.querySelector('span');
+const CTONE = { idiota: '#e2a24e', montaigne: '#e8e4da', soon: 'rgba(241,236,228,.35)' };
+let mx = -100, my = -100, cx = -100, cy = -100;
+addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; mx = e.clientX; my = e.clientY; body.classList.add('cur-on'); }, { passive: true });
+document.addEventListener('pointerleave', () => body.classList.remove('cur-on'));
+addEventListener('pointerdown', () => body.classList.add('dragging'));
+addEventListener('pointerup', () => body.classList.remove('dragging'));
+(function follow() {
+  const k = RM ? 1 : .22; cx += (mx - cx) * k; cy += (my - cy) * k;
+  cur.style.transform = `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0)`;
+  requestAnimationFrame(follow);
+})();
 let leaving = false;
 function go(id) {
   const href = HREF[id]; if (!href || leaving) return;
   leaving = true;
+  sound.enter();
   veil.style.background = TONE[id] || '#000';
   body.classList.add('leaving');
   if (lobby && !RM) { lobby.enter(id); setTimeout(() => veil.classList.add('on'), 650); setTimeout(() => { location.href = href; }, 1350); }
@@ -44,10 +75,12 @@ async function init() {
     lobby = await createLobby({
       canvas: $('#gl'), asset, portals: PORTALS, still: STILL, low,
       onHover: id => {
+        sound.hover(id);
+        if (id) { curTxt.textContent = id === 'soon' ? 'Em breve' : 'Entrar'; cur.style.setProperty('--ctone', CTONE[id] || '#f1ece4'); }
         $$('.tag').forEach(t => t.classList.toggle('on', t.dataset.id === id));
         body.classList.toggle('hovering', !!id);
       },
-      onClose: c => { body.classList.toggle('open', !c); if (c) { body.classList.remove('flash'); void body.offsetWidth; body.classList.add('flash'); } },
+      onClose: c => { body.classList.toggle('open', !c); if (c) { if (!body.classList.contains('intro')) sound.chime(); body.classList.remove('flash'); void body.offsetWidth; body.classList.add('flash'); } },
       onEnter: id => go(id),
       onIntro: () => body.classList.remove('intro'),
     });

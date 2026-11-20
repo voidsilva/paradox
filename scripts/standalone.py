@@ -59,7 +59,7 @@ def build(page, mods=None, img_dirs=(), entry=None, extra=()):
     (OUT / NAMES[page]).write_text(html, encoding='utf-8')
     print(NAMES[page], round(len(html) / 1e6, 2), 'MB')
 
-build('index.html', {'lobby/lobby.js': 'lobby/lobby.js', 'lobby/world.js': 'lobby/world.js'}, ['lobby/img'], 'lobby/lobby.js',
+build('index.html', {'lobby/lobby.js': 'lobby/lobby.js', 'lobby/world.js': 'lobby/world.js', 'lobby/sound.js': 'lobby/sound.js'}, ['lobby/img'], 'lobby/lobby.js',
       ['img/paint/p15-rua.jpg', 'img/cut/p01-retrato.webp', 'montaigne/img/paint/m15-praia.jpg', 'montaigne/img/cut/m09-horizonte.webp'])
 build('idiota.html', {'app/main.js': 'src/main.js', 'app/sound.js': 'src/sound.js', 'app/world/world.js': 'src/world/world.js', 'app/core/core.js': 'src/core/core.js'},
       ['img/paint', 'img/cut'], 'app/main.js')

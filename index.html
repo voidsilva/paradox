@@ -24,6 +24,7 @@
 <header class="top">
   <h1 class="brand">Paradoxo</h1>
   <p class="mono top__meta" id="state" aria-live="polite"><span class="s-on">Arraste. Escolha uma porta.</span><span class="s-off">De lado, o truque aparece.</span></p>
+  <button class="snd mono" id="snd" type="button" aria-pressed="false" aria-label="Som"><i aria-hidden="true"><b></b><b></b><b></b><b></b></i><span>Som</span></button>
 </header>
 
 <div class="tags" aria-hidden="true">
@@ -38,6 +39,7 @@
   <span class="doors__soon"><span class="mono">III</span>em breve</span>
 </nav>
 
+<div class="cur" id="cur" aria-hidden="true"><span class="mono"></span></div>
 <div class="load" id="load" aria-hidden="true"><i></i></div>
 <div class="veil" id="veil" aria-hidden="true"></div>
 <script type="module" src="lobby/lobby.js"></script>
