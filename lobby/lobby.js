@@ -1,83 +1,77 @@
-/* Lobby: cartas que inclinam com o mouse (ou com o giroscópio) e crescem até virar a página escolhida */
+/* Lobby: carrega o objeto impossível, cola as etiquetas nas portas e faz a entrada */
+const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const Q = new URLSearchParams(location.search);
+const STILL = Q.has('still');
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const asset = u => (window.__ASSETS && window.__ASSETS[u]) || u;
-const cards = $$('.card:not(.card--soon)');
-const bgs = { bgA: document.getElementById('bgA'), bgB: document.getElementById('bgB') };
+const body = document.body, veil = $('#veil');
+const tags = Object.fromEntries($$('.tag').map(t => [t.dataset.id, t]));
+const HREF = Object.fromEntries($$('.doors a').map(a => [a.dataset.id, a.getAttribute('href')]));
+const TONE = { idiota: '#170c06', montaigne: '#e4e1d8' };
 
-function focusBg(k) { Object.entries(bgs).forEach(([n, el]) => el.classList.toggle('on', n === k)); }
-focusBg('bgA');
-// sem interação, o fundo alterna sozinho
-let idle = 0, idleT = setInterval(() => { idle ^= 1; focusBg(idle ? 'bgB' : 'bgA'); }, 5200);
+// as três portas: onde ficam, qual é o chão de cada uma
+const L = 14, T = 2.6;
+const PORTALS = [
+  { id: 'idiota', paint: 'img/paint/p15-rua.jpg', cut: 'img/cut/p01-retrato.webp', figH: .84, fade: .18, tone: 0xffa04a, fx: 'ember',
+    at: [L * .5, T / 2, 0], up: [0, 1, 0], fwd: [.45, 0, 1] },
+  { id: 'montaigne', paint: 'montaigne/img/paint/m15-praia.jpg', cut: 'montaigne/img/cut/m09-horizonte.webp', figH: .8, fade: .02, figX: .12, tone: 0xcfe0ff, fx: 'wind', ped: 0xbdb7aa,
+    at: [L + T / 2, L * .48, 0], up: [1, 0, 0], fwd: [0, .45, 1] },
+  { id: 'soon', locked: true, tone: 0x999999, ped: 0x8d826f,
+    at: [L, L + T / 2, L * .55], up: [0, 1, 0], fwd: [1, 0, .45] },
+];
 
-function tilt(card, x, y) { // x, y em 0..1
-  card.style.setProperty('--ry', ((x - .5) * 16).toFixed(2) + 'deg');
-  card.style.setProperty('--rx', ((.5 - y) * 12).toFixed(2) + 'deg');
-  card.style.setProperty('--px', (x * 100).toFixed(1) + '%');
-  card.style.setProperty('--py', (y * 100).toFixed(1) + '%');
+let lobby = null;
+let leaving = false;
+function go(id) {
+  const href = HREF[id]; if (!href || leaving) return;
+  leaving = true;
+  veil.style.background = TONE[id] || '#000';
+  body.classList.add('leaving');
+  if (lobby && !RM) { lobby.enter(id); setTimeout(() => veil.classList.add('on'), 650); setTimeout(() => { location.href = href; }, 1350); }
+  else { veil.classList.add('on'); setTimeout(() => { location.href = href; }, 300); }
 }
-function rest(card) { card.classList.remove('live'); tilt(card, .5, .5); card.style.setProperty('--lift', 0); }
+$$('.doors a').forEach(a => a.addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); go(a.dataset.id); }));
+$$('.doors a').forEach(a => { a.addEventListener('pointerenter', () => lobby && lobby.set({ hover: a.dataset.id })); a.addEventListener('focus', () => lobby && lobby.set({ hover: a.dataset.id })); });
 
-cards.forEach(card => {
-  if (!RM) {
-    card.addEventListener('pointermove', e => {
-      if (e.pointerType !== 'mouse') return;
-      const r = card.getBoundingClientRect();
-      card.classList.add('live'); card.style.setProperty('--lift', 1);
-      tilt(card, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+function hasGL() { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { return false; } }
+
+async function init() {
+  if (Q.get('q') === 'off' || !hasGL()) { body.classList.add('flat'); body.classList.remove('is-loading'); return; }
+  try {
+    const { createLobby } = await import('lobby/world.js');
+    const low = Q.get('q') === 'low' || (Q.get('q') !== 'high' && (matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4));
+    lobby = await createLobby({
+      canvas: $('#gl'), asset, portals: PORTALS, still: STILL, low,
+      onHover: id => {
+        $$('.tag').forEach(t => t.classList.toggle('on', t.dataset.id === id));
+        $$('.cap').forEach(c => c.classList.toggle('on', c.dataset.id === (id || '')));
+        body.classList.toggle('hovering', !!id);
+      },
+      onClose: c => body.classList.toggle('open', !c),
+      onEnter: id => go(id),
     });
-    card.addEventListener('pointerleave', () => rest(card));
+    window.__lobby = lobby;
+  } catch (e) {
+    console.warn('Sem 3D:', e);
+    body.classList.add('flat');
   }
-  const hi = () => { clearInterval(idleT); focusBg(card.dataset.bg); };
-  card.addEventListener('pointerenter', hi);
-  card.addEventListener('focus', hi);
-  card.addEventListener('click', e => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-    e.preventDefault(); enter(card);
-  });
-});
-
-// celular: o giroscópio inclina a carta que está no meio da tela
-if (!RM && matchMedia('(hover: none)').matches && 'DeviceOrientationEvent' in window) {
-  const onTilt = e => {
-    if (e.gamma == null) return;
-    const mid = innerHeight / 2;
-    const c = cards.find(k => { const r = k.getBoundingClientRect(); return r.top < mid && r.bottom > mid; });
-    cards.forEach(k => k !== c && rest(k));
-    if (!c) return;
-    c.classList.add('live');
-    tilt(c, Math.max(0, Math.min(1, .5 + e.gamma / 50)), Math.max(0, Math.min(1, .5 + (e.beta - 45) / 60)));
-    focusBg(c.dataset.bg); clearInterval(idleT);
+  body.classList.remove('is-loading');
+  if (!lobby) return;
+  // etiquetas presas às portas
+  const place = () => {
+    for (const id in tags) {
+      const s = lobby.screen(id); if (!s) continue;
+      const x = Math.min(innerWidth - 74, Math.max(74, s.x)), y = Math.min(innerHeight - 20, Math.max(90, s.y));
+      tags[id].style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+    }
+    if (!STILL) requestAnimationFrame(place);
   };
-  const arm = () => {
-    const P = window.DeviceOrientationEvent;
-    if (typeof P.requestPermission === 'function') P.requestPermission().then(s => s === 'granted' && addEventListener('deviceorientation', onTilt)).catch(() => {});
-    else addEventListener('deviceorientation', onTilt);
-  };
-  if (typeof DeviceOrientationEvent.requestPermission === 'function') addEventListener('touchend', arm, { once: true });
-  else arm();
+  place();
 }
+init();
 
-// entrar: a pintura da carta cresce até cobrir a tela, escurece no tom da página e navega
-const wipe = document.getElementById('wipe');
-let going = false;
-function enter(card) {
-  if (going) return; going = true;
-  const href = card.getAttribute('href');
-  if (RM) { location.href = href; return; }
-  const r = card.querySelector('.card__in').getBoundingClientRect();
-  const img = card.querySelector('.card__paint img');
-  Object.assign(wipe.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', backgroundImage: `url(${img.currentSrc || img.src})` });
-  wipe.style.setProperty('--deep', getComputedStyle(card).getPropertyValue('--deep'));
-  document.body.classList.add('leaving');
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    wipe.classList.add('go');
-    Object.assign(wipe.style, { left: '0px', top: '0px', width: innerWidth + 'px', height: innerHeight + 'px', borderRadius: '0px' });
-  }));
-  setTimeout(() => { location.href = href; }, 1050);
-}
-// voltar pelo histórico devolve o lobby inteiro
-addEventListener('pageshow', e => { if (e.persisted) { going = false; wipe.className = 'wipe'; document.body.classList.remove('leaving'); cards.forEach(rest); } });
-
+// voltar pelo histórico devolve o lobby
+addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
 // o arquivo único troca os caminhos das imagens
 if (window.__ASSETS) $$('img').forEach(i => { const s = i.getAttribute('src'); if (s) i.src = asset(s); });

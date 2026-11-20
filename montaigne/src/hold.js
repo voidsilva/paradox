@@ -109,7 +109,7 @@ export async function createHold({ canvas, tier = 'high', still = false, asset =
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(W * 1.25, H * 1.35), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, uniforms: { uS: { value: 1 }, uA: { value: .5 } },
     vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
-    fragmentShader: `uniform float uS, uA; varying vec2 vUv; void main(){ vec2 q = (vUv - .5) / uS; float d = length(max(abs(q) - vec2(.36, .33), 0.)); gl_FragColor = vec4(0., 0., 0., exp(-d * d * 60.) * uA); }`,
+    fragmentShader: `uniform float uS, uA; varying vec2 vUv; void main(){ vec2 q = (vUv - .5) / uS; float d = length(max(abs(q) - vec2(.36, .33), 0.)); vec2 e = abs(vUv - .5); gl_FragColor = vec4(.06, .07, .09, exp(-d * d * 60.) * uA * smoothstep(.5, .36, max(e.x, e.y))); }`,
   }));
   shadow.position.set(.5, -.6, -1.6);
   scene.add(shadow);

@@ -26,12 +26,14 @@
 - Cerca de 600 cacos (alta) com cortes secundários, mais pó de vidro instanciado.
 - Pós próprio: bloom em meia resolução, tom fílmico ACES, aberração cromática leve e grão.
 
-## Montaigne — “Solte”
-- Lugar: madrugada fria (`#0a0d12`) que vira manhã de névoa (`#e4e1d8`) no fim. Acento damasco `#f0b48a` no lugar do ouro.
-- Passagem entre cenas: o vento descasca a pintura da esquerda para a direita em flocos de papel claro (sem fogo, sem brasa).
-- Final: os quadros soltos sobem e somem; a névoa clareia até a página.
-- Atração: segurar amassa a pintura (dobras, luz rasante, cor some); soltar desdobra com mola e a próxima pintura entra em flocos. O texto reage ao gesto: “Segure.” → “Mais forte.” → “Agora, solte.” → “Ela só se abriu quando você soltou.”
-- Som: Fá maior aberto; segurar fecha o filtro e traz vento; soltar toca um arpejo subindo.
+## Montaigne — Paradoxo II
+- Identidade oposta à do Idiota: dia em vez de noite, névoa (`#e2dfd6`) em vez de fumaça, papel de livro (`#efebe2`), tinta (`#1a1e25`) e rubrica vermelha (`#b0391f`) em vez de ouro.
+- Letra: EB Garamond, a letra de Claude Garamond, Paris, da geração de Montaigne. Títulos em serifa leve com itálico vermelho, capitular no começo de cada parágrafo, rótulos em Instrument Sans espaçada. Cantos retos, filetes, pontilhado de índice.
+- As cenas aparecem na névoa: a vinheta clareia em vez de escurecer, e o texto de cada cena tem uma clareira de névoa atrás.
+- Passagem entre cenas: o vento descasca a pintura em lascas de papel com tinta. Final: os quadros soltos sobem e somem.
+- Atração: segurar amassa a pintura e escurece a sala em volta; soltar desdobra e revela a próxima.
 
-## Lobby
-- Fundo: a pintura da carta em foco, borrada. Cartas com três camadas (pintura, figura recortada saindo da moldura, título) e brilho que segue o cursor. Clique: a pintura cresce até cobrir a tela e escurece no tom do site.
+## As portas (lobby)
+- Um triângulo de Penrose: três vigas, cada uma uma galeria com a identidade de um paradoxo (nogueira e ouro; pedra clara e molduras finas; linho cru com esboços para o próximo).
+- Câmera ortográfica na direção (1,1,1). Só desse ângulo a terceira viga encosta na primeira; ela é desenhada antes e o resto por cima. Arrastar abre o objeto e mostra o truque; ao soltar, ele volta sozinho e fecha.
+- Cada porta está numa gravidade (em pé, de lado). Brasas sobem da porta do Idiota; papéis voam da porta do Montaigne. O céu é metade brasa, metade névoa.

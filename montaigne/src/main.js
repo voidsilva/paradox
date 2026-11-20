@@ -89,17 +89,17 @@ const tier = detectTier();
 
 // as sete cenas: pintura de fundo + figuras recortadas; a passagem é o vento, não o fogo
 const MONTAIGNE = {
-  dir: 'montaigne/img/', fog: 0x0a0d12, dawn: 0xe4e1d8, gold: 0xc8b48c, mode: 'wind', notes: -1, rays: 4, glow: 5, finale: 'release',
+  dir: 'montaigne/img/', fog: 0xe2dfd6, dawn: 0xefebe2, gold: 0x1a1e25, mode: 'wind', notes: -1, rays: -1, glow: -1, finale: 'release',
   paints: ['m01-pano', 'm02-montaigne', 'm03-janela', 'm04-barba', 'm05-punho', 'm06-multidao', 'm07-bobo', 'm08-leitor', 'm09-horizonte', 'm10-torre', 'm11-casal', 'm12-campo', 'm13-olhos', 'm14-ela', 'm15-praia', 'm16-bracos', 'm17-retrato', 'm18-colina'],
   cuts: ['m01-pano', 'm02-montaigne', 'm05-punho', 'm08-leitor', 'm09-horizonte', 'm11-casal', 'm12-campo', 'm16-bracos', 'm17-retrato'],
   scenes: [
-    { bg: 'm18-colina', dim: .5, look: -1.5, cuts: [{ k: 'm17-retrato', x: 6.5, y: -1.6, h: 12.5, z: 1.5 }] },
-    { bg: 'm04-barba', dim: .4, look: -3.5, cuts: [{ k: 'm05-punho', x: 7, y: -2.2, h: 9.5, z: 1 }] },
-    { bg: 'm06-multidao', dim: .42, look: 3.5, cuts: [{ k: 'm01-pano', x: -7.5, y: -1.8, h: 10.5, z: 2 }] },
-    { bg: 'm10-torre', dim: .5, look: -3.5, cuts: [{ k: 'm08-leitor', x: 7, y: -2.4, h: 9, z: 1.5 }] },
-    { bg: 'm13-olhos', dim: .3, look: 0, cuts: [{ k: 'm12-campo', x: -12.5, y: -3.2, h: 8.5, z: 0 }, { k: 'm09-horizonte', x: 12.5, y: -2, h: 10.5, z: 1 }] },
-    { bg: 'm14-ela', dim: .48, look: 3.5, cuts: [{ k: 'm11-casal', x: -7.5, y: -2.4, h: 8.5, z: 2 }] },
-    { bg: 'm15-praia', dim: .62, look: -1, cuts: [{ k: 'm16-bracos', x: 7.5, y: -1.6, h: 11.5, z: 1.5 }] },
+    { bg: 'm18-colina', dim: 0.9, look: -1.5, cuts: [{ k: 'm17-retrato', x: 6.5, y: -1.6, h: 12.5, z: 1.5 }] },
+    { bg: 'm04-barba', dim: 0.84, look: -3.5, cuts: [{ k: 'm05-punho', x: 7, y: -2.2, h: 9.5, z: 1 }] },
+    { bg: 'm06-multidao', dim: 0.85, look: 3.5, cuts: [{ k: 'm01-pano', x: -7.5, y: -1.8, h: 10.5, z: 2 }] },
+    { bg: 'm10-torre', dim: 0.9, look: -3.5, cuts: [{ k: 'm08-leitor', x: 7, y: -2.4, h: 9, z: 1.5 }] },
+    { bg: 'm13-olhos', dim: 0.79, look: 0, cuts: [{ k: 'm12-campo', x: -12.5, y: -3.2, h: 8.5, z: 0 }, { k: 'm09-horizonte', x: 12.5, y: -2, h: 10.5, z: 1 }] },
+    { bg: 'm14-ela', dim: 0.88, look: 3.5, cuts: [{ k: 'm11-casal', x: -7.5, y: -2.4, h: 8.5, z: 2 }] },
+    { bg: 'm15-praia', dim: 0.96, look: -1, cuts: [{ k: 'm16-bracos', x: 7.5, y: -1.6, h: 11.5, z: 1.5 }] },
   ],
 };
 

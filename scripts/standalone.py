@@ -1,5 +1,5 @@
 """Gera em dist-standalone/ um arquivo único por página, que abre com dois cliques:
-  Paradoxos.html (lobby) · O-Paradoxo.html (O Idiota) · Solte-Montaigne.html (Montaigne)
+  Paradoxo.html (as portas) · Paradoxo-O-Idiota.html · Paradoxo-Montaigne.html
 Os links entre eles apontam para os arquivos irmãos, então mantenha os três na mesma pasta.
 Uso: python scripts/standalone.py
 """
@@ -7,7 +7,7 @@ import base64, json, re, pathlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'dist-standalone'
 MIME = {'.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png'}
-NAMES = {'index.html': 'Paradoxos.html', 'idiota.html': 'O-Paradoxo.html', 'montaigne.html': 'Solte-Montaigne.html'}
+NAMES = {'index.html': 'Paradoxo.html', 'idiota.html': 'Paradoxo-O-Idiota.html', 'montaigne.html': 'Paradoxo-Montaigne.html'}
 IMG = r'(?:montaigne/)?img/(?:paint|cut)/[\w.-]+'
 
 def data(p):
@@ -20,7 +20,7 @@ def css_inline(path):
     base = (ROOT / path).parent
     return re.sub(r'url\((\.\./[^)"\']+)\)', lambda m: f'url({data((base / m.group(1)).resolve().relative_to(ROOT))})', css)
 
-def build(page, mods=None, img_dirs=(), entry=None):
+def build(page, mods=None, img_dirs=(), entry=None, extra=()):
     html = (ROOT / page).read_text(encoding='utf-8')
     # estilos
     for href in re.findall(r'<link rel="stylesheet" href="([^"]+)">', html):
@@ -29,6 +29,7 @@ def build(page, mods=None, img_dirs=(), entry=None):
     html = re.sub(r'(<link rel="icon" href=")([^"]+)(")', lambda m: m.group(1) + data(m.group(2)) + m.group(3), html)
     # imagens: o WebGL não lê file:// direto, então tudo vira data URL
     assets = {}
+    for p in extra: assets[p] = data(p)
     for d in img_dirs:
         for f in sorted((ROOT / d).iterdir()):
             assets[f'{d}/{f.name}'] = data(f'{d}/{f.name}')
@@ -58,7 +59,8 @@ def build(page, mods=None, img_dirs=(), entry=None):
     (OUT / NAMES[page]).write_text(html, encoding='utf-8')
     print(NAMES[page], round(len(html) / 1e6, 2), 'MB')
 
-build('index.html')
+build('index.html', {'lobby/lobby.js': 'lobby/lobby.js', 'lobby/world.js': 'lobby/world.js'}, ['lobby/img'], 'lobby/lobby.js',
+      ['img/paint/p15-rua.jpg', 'img/cut/p01-retrato.webp', 'montaigne/img/paint/m15-praia.jpg', 'montaigne/img/cut/m09-horizonte.webp'])
 build('idiota.html', {'app/main.js': 'src/main.js', 'app/sound.js': 'src/sound.js', 'app/world/world.js': 'src/world/world.js', 'app/core/core.js': 'src/core/core.js'},
       ['img/paint', 'img/cut'], 'app/main.js')
 build('montaigne.html', {'app/main.js': 'montaigne/src/main.js', 'app/hold.js': 'montaigne/src/hold.js', 'shared/sound.js': 'src/sound.js', 'shared/world/world.js': 'src/world/world.js'},

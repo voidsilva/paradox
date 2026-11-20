@@ -3,76 +3,52 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Paradoxos — escolha um</title>
-<meta name="description" content="Paradoxos da filosofia contados com as pinturas dos vídeos d'A Psique. Escolha um: a bondade de Dostoiévski ou o desapego de Montaigne.">
-<meta name="theme-color" content="#0b0a0a">
-<meta property="og:title" content="Paradoxos — escolha um">
-<meta property="og:description" content="Ser bom é suficiente? Por que soltar faz dar certo?">
+<title>Paradoxo</title>
+<meta name="description" content="Um objeto impossível com uma porta para cada paradoxo da filosofia: a bondade de Dostoiévski, o desapego de Montaigne. Ele só fecha de um ângulo.">
+<meta name="theme-color" content="#0c0a0b">
+<meta property="og:title" content="Paradoxo">
+<meta property="og:description" content="Ele só existe deste ângulo. Escolha uma porta.">
 <meta property="og:image" content="lobby/og.jpg">
 <meta property="og:type" content="website">
 <link rel="icon" href="lobby/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/bodoni-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="lobby/lobby.css">
+<script type="importmap">
+{"imports":{"three":"./vendor/three/three.module.min.js","lobby/":"./lobby/"}}
+</script>
 </head>
-<body>
-<div class="bg" aria-hidden="true"><img id="bgA" src="img/paint/p15-rua.jpg" alt=""><img id="bgB" src="montaigne/img/paint/m18-colina.jpg" alt=""></div>
+<body class="is-loading">
+<canvas id="gl" aria-hidden="true"></canvas>
 
 <header class="top">
-  <p class="brand"><i>P</i>aradoxos</p>
-  <p class="mono top__meta">Filosofia em pinturas<br>A partir dos vídeos d’A Psique</p>
+  <h1 class="brand">Paradoxo</h1>
+  <p class="mono top__meta" id="state" aria-live="polite"><span class="s-on">Impossível. Mas está aí.</span><span class="s-off">De lado, o truque aparece.</span></p>
 </header>
 
-<main class="hall">
-  <h1 class="hall__t"><span class="mono">Escolha um</span><em>dois jeitos</em> de perder <br>para ganhar</h1>
+<div class="tags" aria-hidden="true">
+  <div class="tag" data-id="idiota" style="--tone:#e2a24e"><span class="mono">I · O Idiota</span></div>
+  <div class="tag" data-id="montaigne" style="--tone:#c7d3dc"><span class="mono">II · Montaigne</span></div>
+  <div class="tag tag--soon" data-id="soon"><span class="mono">III · em breve</span></div>
+</div>
 
-  <ul class="cards" id="cards">
-    <li>
-      <a class="card" href="idiota.html" data-bg="bgA" style="--tone:#d9ad62;--deep:#1a0f08">
-        <span class="card__in">
-          <span class="card__paint"><img src="img/paint/p15-rua.jpg" alt=""></span>
-          <span class="card__shade"></span>
-          <span class="card__fig"><img src="img/cut/p01-retrato.webp" alt=""></span>
-          <span class="card__no mono">Nº 01 · Dostoiévski</span>
-          <span class="card__title"><em>O</em> Idiota</span>
-          <span class="card__q">Ser bom é suficiente num mundo que não é?</span>
-          <span class="card__go mono">Entrar <b aria-hidden="true">→</b></span>
-          <span class="card__glare"></span>
-        </span>
-      </a>
-    </li>
-    <li>
-      <a class="card" href="montaigne.html" data-bg="bgB" style="--tone:#f0b48a;--deep:#0c1118">
-        <span class="card__in">
-          <span class="card__paint"><img src="montaigne/img/paint/m18-colina.jpg" alt=""></span>
-          <span class="card__shade"></span>
-          <span class="card__fig card__fig--fade"><img src="montaigne/img/cut/m02-montaigne.webp" alt=""></span>
-          <span class="card__no mono">Nº 02 · Montaigne</span>
-          <span class="card__title"><em>S</em>olte</span>
-          <span class="card__q">Por que tudo melhora quando você para de apertar?</span>
-          <span class="card__go mono">Entrar <b aria-hidden="true">→</b></span>
-          <span class="card__glare"></span>
-        </span>
-      </a>
-    </li>
-    <li>
-      <div class="card card--soon" aria-label="Próximo paradoxo, em breve">
-        <span class="card__in">
-          <span class="card__no mono">Nº 03</span>
-          <span class="card__title"><em>em</em> breve</span>
-          <span class="card__q">O próximo paradoxo ainda está sendo pintado.</span>
-        </span>
-      </div>
-    </li>
-  </ul>
-</main>
+<div class="caps" aria-hidden="true">
+  <div class="cap" data-id="idiota" style="--tone:#e2a24e"><span class="mono">I · Dostoiévski, 1869</span><b><em>O</em> Idiota</b><i>Ser bom é suficiente num mundo que não é?</i></div>
+  <div class="cap" data-id="montaigne" style="--tone:#c7d3dc"><span class="mono">II · Montaigne, 1580</span><b><em>S</em>olte</b><i>Por que tudo melhora quando você para de apertar?</i></div>
+  <div class="cap" data-id="soon"><span class="mono">III</span><b><em>em</em> breve</b><i>Este ainda está sendo pintado.</i></div>
+  <div class="cap cap--idle on" data-id=""><span class="mono">Três portas, três gravidades</span><b>Ele só existe <em>deste ângulo.</em></b><i>Gire o objeto e veja o truque. Solte, e ele volta a ser impossível.</i></div>
+</div>
 
-<footer class="foot mono">
-  <p>Passe o mouse ou incline o celular. Toque para entrar.</p>
-  <p>Imagens e ideias: canal A Psique no YouTube</p>
-</footer>
+<nav class="doors" aria-label="Escolha um paradoxo">
+  <a href="idiota.html" data-id="idiota"><span class="mono">I</span>O Idiota</a>
+  <a href="montaigne.html" data-id="montaigne"><span class="mono">II</span>Solte · Montaigne</a>
+  <span class="doors__soon"><span class="mono">III</span>em breve</span>
+</nav>
 
-<div class="wipe" id="wipe" aria-hidden="true"></div>
+<p class="hint mono" id="hint"><span>Arraste para girar</span><span>Clique numa porta</span></p>
+
+<div class="load" id="load" aria-hidden="true"><span class="mono">Montando o impossível</span><i></i></div>
+<div class="veil" id="veil" aria-hidden="true"></div>
 <script type="module" src="lobby/lobby.js"></script>
 </body>
 </html>

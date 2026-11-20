@@ -62,7 +62,7 @@ const frag = /* glsl */`
     vec3 col = c.rgb * uDim;
     // vinheta (fundo): bordas se dissolvem na escuridão
     float v = smoothstep(1.02, .3, length((uv - .5) * 2.) * .8);
-    col *= mix(1., v, uVig);
+    if (uMode > .5) col = mix(col, uFog, (1. - v) * uVig); else col *= mix(1., v, uVig);
     // moldura dourada fina (quadros soltos)
     vec2 e = min(uv, 1. - uv) * vec2(uAsp, 1.);
     float b = step(min(e.x, e.y), .035);
@@ -263,7 +263,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
           if (uWind > .5) {
             vec2 q = gl_PointCoord - .5; float c = cos(vS * 3.), s = sin(vS * 3.); q = mat2(c, s, -s, c) * q;
             float f = step(abs(q.x), .38) * step(abs(q.y), .14 + .1 * fract(vS * 7.));
-            if (f < .5) discard; gl_FragColor = vec4(mix(vec3(.95, .88, .74), vec3(1., .75, .55), fract(vS * 3.)), vA * uAmt * 1.4); return; }
+            if (f < .5) discard; gl_FragColor = vec4(mix(vec3(.2, .22, .26), vec3(.62, .22, .14), step(.8, fract(vS * 3.))), vA * uAmt * 1.1); return; }
           gl_FragColor = vec4(vec3(1., .55, .2) * a * vA * uAmt * 1.6 + vec3(1., .9, .7) * exp(-r * r * 120.) * vA * uAmt, 1.); }`,
     });
     const pts = new THREE.Points(geo, mat);
@@ -399,7 +399,8 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
         uv.x -= uHaze * uWind * .006 * sin(uv.y * 9. + uTime * 2.);
         vec2 o = d * uCA * (.35 + r2 * 3.);
         vec3 c = vec3(texture2D(tD, uv + o).r, texture2D(tD, uv).g, texture2D(tD, uv - o).b);
-        c *= 1. - smoothstep(.18, .75, r2) * .55;
+        float vg = smoothstep(.18, .75, r2);
+        c = mix(c * (1. - vg * .55), mix(c, vec3(.9, .89, .86), vg * .55), uWind);
         c += mix(vec3(1., .5, .2), vec3(.9, .85, .8), uWind) * uHaze * .06 * (1. - r2 * 2.);
         c = mix(c, vec3(1., .94, .84), uFlash);
         gl_FragColor = vec4(c, 1.); }`,

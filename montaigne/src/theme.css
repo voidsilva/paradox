@@ -1,77 +1,188 @@
-/* Solte — tema de Montaigne: madrugada fria que vira manhã de névoa.
-   Só troca tokens e os poucos tons fixos do styles.css compartilhado. */
-body.m {
-  --night: #0a0d12;
-  --bone: #eef0ec;
-  --bone-2: rgba(238, 240, 236, .74);
-  --gold: #f0b48a;          /* damasco: a luz da manhã, no lugar do ouro */
-  --ember: #b5562f;
-  --paper: #e6e3da;
-  --paper-2: #d8d5cb;
-  --ink: #121820;
-  --ink-2: #4f5a66;
-  --line: rgba(18, 24, 32, .16);
-}
-body.m ::selection { background: var(--gold); color: var(--ink); }
+/* Paradoxo II — Montaigne. Identidade própria: dia de névoa, papel de livro de 1580, tinta e rubrica vermelha.
+   O Idiota é noite, fogo, sans condensada e ouro. Aqui é o contrário: claro, serifa de livro, letra pequena espaçada,
+   texto que se lê como ensaio. Este arquivo vem depois do styles.css compartilhado e redefine a cara inteira. */
+@font-face { font-family: "EB Garamond"; src: url(../../fonts/garamond.woff2) format("woff2"); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: "EB Garamond"; src: url(../../fonts/garamond-italic.woff2) format("woff2"); font-weight: 400 800; font-style: italic; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url(../../fonts/instrument.woff2) format("woff2"); font-weight: 400 700; font-stretch: 75% 100%; font-display: swap; }
 
-/* tons que o styles.css fixa em marrom */
-.m .menu { background: rgba(10, 13, 18, .96); }
-.m .stage::before { background: radial-gradient(90% 70% at 18% 88%, rgba(10, 13, 18, .6), transparent 62%), radial-gradient(70% 60% at 90% 30%, rgba(10, 13, 18, .22), transparent 70%); }
-.m .st__t { text-shadow: 0 2px 40px rgba(10, 13, 18, .5); }
-.m .st__p { text-shadow: 0 1px 18px rgba(10, 13, 18, .75); }
-.m .loader__pic, .m .frame { background: linear-gradient(135deg, #9aa3ab, #eef0ec 22%, #6b737c 48%, #d9dcd8 72%, #5b6169); }
-.m .loader__pic img { filter: saturate(.85) contrast(1.05); }
-.m .loader__mark { text-shadow: 0 10px 40px rgba(10, 13, 18, .8); }
-.m .hdr.on-page { background: linear-gradient(var(--paper) 55%, rgba(230, 227, 218, 0)); }
-.m .dc__f { background: #f4f2ec; }
-.m .dc__b { background: radial-gradient(120% 90% at 30% 10%, #263240, var(--ink)); box-shadow: inset 0 0 0 1px rgba(240, 180, 138, .35); }
-.m .cur--ring.hot { background: rgba(240, 180, 138, .14); }
-.m .stage.flat::after { background: radial-gradient(120% 90% at 50% 40%, rgba(10, 13, 18, .25), rgba(10, 13, 18, .85)); }
+body.m {
+  --night: #e2dfd6;          /* a névoa: é o "fundo" do mundo 3D */
+  --bone: #1a1e25;           /* sobre a névoa, o texto é tinta */
+  --bone-2: rgba(26, 30, 37, .68);
+  --gold: #b0391f;           /* rubrica: o vermelho dos títulos dos livros antigos */
+  --ember: #b0391f;
+  --paper: #efebe2;
+  --paper-2: #e5e0d4;
+  --ink: #1a1e25;
+  --ink-2: #555b63;
+  --line: rgba(26, 30, 37, .2);
+  --f-sans: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --f-serif: "EB Garamond", Garamond, Georgia, serif;
+  --f-mono: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--f-serif);
+  font-size: 19px;
+}
+body.m::after { opacity: .05; mix-blend-mode: multiply; }
+body.m ::selection { background: var(--gold); color: var(--paper); }
+.m .mono { font: 600 10.5px/1.5 var(--f-sans); letter-spacing: .2em; text-transform: uppercase; font-stretch: 90%; }
+.m .sw { font-family: var(--f-serif); font-style: italic; font-weight: 400; letter-spacing: -.01em; font-variation-settings: normal; }
+.m :focus-visible { outline-color: var(--gold); }
+
+/* ===== portão: uma folha de rosto ===== */
+.m .loader { background: var(--paper); }
+.m .loader::after { background: var(--gold); }
+.m .loader__pic { width: clamp(130px, 13vw, 170px); padding: 0; border-radius: 0; background: none; box-shadow: 0 0 0 1px var(--ink), 0 0 0 7px var(--paper), 0 0 0 8px var(--ink), 0 30px 60px -30px rgba(26, 30, 37, .5); transform: none; }
+.m .loader__pic img { filter: grayscale(.25) contrast(1.05); }
+.m .loader__mark { margin-top: 34px; font: 300 clamp(54px, 8vw, 112px)/.9 var(--f-serif); letter-spacing: .02em; text-shadow: none; }
+.m .loader__mark i { font: italic 300 1em/1 var(--f-serif); color: var(--gold); margin-right: 0; }
+.m .loader__sub { margin: 10px 0 0; color: var(--ink-2); }
+.m .loader .pill--glow { color: var(--paper); background: var(--ink); border-color: var(--ink); border-radius: 2px; font: 600 15px/1 var(--f-sans); letter-spacing: .02em; }
+.m .pill--glow::after { border-radius: 2px; }
+
+/* ===== cabeçalho: corrido de livro ===== */
+.m .hdr { align-items: baseline; }
+.m .hdr__mark { display: flex; align-items: baseline; gap: 10px; }
+.m .hdr__mark i { font: italic 400 30px/1 var(--f-serif); color: var(--gold); grid-row: auto; }
+.m .hdr__mark span { font: 400 26px/1 var(--f-serif); letter-spacing: .02em; margin-left: -12px; }
+.m .hdr__mark small { opacity: 1; color: var(--ink-2); }
+.m .hdr.on-page { background: linear-gradient(var(--paper) 55%, rgba(239, 235, 226, 0)); }
+.m .hdr__nav a { font-weight: 600; }
+.m .menu { background: rgba(239, 235, 226, .97); }
+.m .menu a { font: 300 54px/1.05 var(--f-serif); color: var(--ink); }
+.m .menu a span { font: 600 11px/1 var(--f-sans); letter-spacing: .2em; color: var(--gold); }
+.m .cur { background: var(--gold); mix-blend-mode: normal; }
+.m .cur--ring { border-color: var(--gold); }
+.m .cur--ring.hot { background: rgba(176, 57, 31, .1); }
+
+/* ===== Ato 1: névoa ===== */
+.m .stage { background: var(--night); }
+.m .stage::before { background: radial-gradient(70% 60% at 20% 80%, rgba(226, 223, 214, .78), transparent 65%), radial-gradient(60% 60% at 85% 40%, rgba(226, 223, 214, .35), transparent 70%); }
+.m .stage.flat::after { background: radial-gradient(120% 90% at 50% 40%, rgba(226, 223, 214, .2), rgba(226, 223, 214, .8)); }
+.m .cue { color: var(--ink-2); }
+
+/* os títulos das cenas são capítulos de ensaio: serifa leve, rubrica, parágrafo */
+.m .st { color: var(--ink); max-width: min(90vw, 760px); }
+.m .st__t { font: 300 clamp(50px, 7vw, 128px)/.9 var(--f-serif); letter-spacing: -.015em; text-shadow: 0 0 40px rgba(226, 223, 214, .9), 0 0 2px rgba(226, 223, 214, .6); }
+.m .st__t b { font-weight: 300; }
+.m .st__t .sw { font-size: 1em; line-height: .9; color: var(--gold); }
+.m .st__num, .m .st__kick { display: flex !important; gap: 14px; align-items: center; margin: 0 0 20px; color: var(--gold); }
+.m .st__num::before { content: ""; width: 34px; height: 1px; background: currentColor; }
+.m .st__p { display: block !important; margin: 24px 0 0; max-width: 27em; font: 400 clamp(18px, 1.35vw, 22px)/1.42 var(--f-serif); color: var(--ink); text-shadow: 0 0 18px rgba(226, 223, 214, .95), 0 0 2px rgba(226, 223, 214, .9); }
+.m .st__p::first-letter { float: left; margin: .06em .08em 0 0; font: 400 3.3em/.74 var(--f-serif); color: var(--gold); }
+/* uma clareira de névoa atrás de cada texto: a pintura recua onde se lê */
+.m .st::before { content: ""; position: absolute; z-index: -1; inset: -22% -16% -26% -14%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(226, 223, 214, .9), rgba(226, 223, 214, .7) 50%, rgba(226, 223, 214, 0)); filter: blur(10px); }
+.m .st__t { text-shadow: 0 0 26px rgba(226, 223, 214, .95), 0 0 8px rgba(226, 223, 214, .9); }
+/* tudo alinhado à esquerda, como a página de um livro; o texto da direita vira coluna da direita */
+.m .st--hero { left: var(--gut); right: auto; bottom: 9vh; }
+.m .st--hero .st__t { font-size: clamp(56px, 8.2vw, 150px); }
+.m .st--l { left: calc(var(--gut) + 4vw); }
+.m .st--r { right: calc(var(--gut) + 2vw); text-align: left; max-width: min(46vw, 640px); }
+.m .st--r .st__p { margin-left: 0; }
+.m .st__t--list { font-size: clamp(34px, 4.4vw, 80px); line-height: 1.08; }
+.m .st__t--list .sw { color: var(--gold); }
 
 /* ===== Segure ===== */
-.core.hold { height: 420vh; }
-.hold .core__stage { background: radial-gradient(70% 70% at 50% 46%, #1b2430 0%, #10161e 48%, var(--night) 82%); transition: background 1s; }
-.hold .core__stage::after { background: radial-gradient(90% 70% at 15% 90%, rgba(10, 13, 18, .72), transparent 60%); }
+.core.hold { height: 420vh; background: var(--night); }
+.hold .core__stage { background: radial-gradient(70% 70% at 50% 46%, #f4f1ea 0%, #e9e5dc 50%, var(--night) 85%); }
+.hold .core__stage::after { background: none; }
 /* quanto mais aperta, mais a sala escurece em volta */
-.hold .core__stage::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(60% 60% at 50% 48%, transparent 30%, rgba(4, 6, 9, .85)); opacity: calc(var(--g, 0) * .9); }
+.hold .core__stage::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(60% 60% at 50% 48%, transparent 25%, rgba(26, 30, 37, .78)); opacity: calc(var(--g, 0) * .95); }
 #coreGl { cursor: grab; }
 .holding #coreGl { cursor: grabbing; }
-.hold .core__flat { right: 0; left: 0; margin: auto; width: min(64vw, 820px); aspect-ratio: 16 / 10; transition: transform .2s; transform: translateY(-50%) scale(calc(1 - var(--g, 0) * .12)); }
-.hold .cap { z-index: 3; }
-.hold .cap h3 { text-shadow: 0 4px 40px rgba(10, 13, 18, .6); }
+.hold .core__flat { right: 0; left: 0; margin: auto; width: min(64vw, 820px); aspect-ratio: 16 / 10; transition: transform .2s; transform: translateY(-50%) scale(calc(1 - var(--g, 0) * .12)); box-shadow: 0 40px 80px -40px rgba(26, 30, 37, .6); }
+.hold .cap { z-index: 3; color: var(--ink); }
+.hold .cap h3 { font: 300 clamp(60px, 8vw, 140px)/.9 var(--f-serif); letter-spacing: -.015em; text-shadow: 0 0 40px rgba(244, 241, 234, .9); }
+.hold .cap h3 .sw { color: var(--gold); }
+.hold .cap .mono { color: var(--gold); }
+.hold .cap p:not(.mono) { color: var(--ink-2); font-family: var(--f-serif); }
+.holding .cap h3 { color: var(--paper); text-shadow: 0 0 40px rgba(26, 30, 37, .6); }
 .hold .cap--c { bottom: auto; top: 50%; transform: translate(-50%, -50%); }
-.hold .cap--c h3 { font-size: clamp(40px, 5vw, 84px); }
+.hold .cap--c h3 { font-size: clamp(42px, 5.2vw, 90px); }
 
 .hold__btn {
   position: absolute; z-index: 4; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); translate: -50% 0;
-  display: flex; align-items: center; gap: 14px; padding: 10px 22px 10px 10px; border-radius: 99px;
-  color: var(--bone); background: rgba(238, 240, 236, .08); border: 1px solid rgba(238, 240, 236, .22);
+  display: flex; align-items: center; gap: 14px; padding: 10px 22px 10px 10px; border-radius: 2px;
+  color: var(--ink); background: rgba(239, 235, 226, .7); border: 1px solid rgba(26, 30, 37, .3);
   -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
-  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none;
+  white-space: nowrap; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none;
   transition: background .3s, border-color .3s, scale .3s var(--ease);
 }
-.hold__btn i { order: -1; position: relative; width: 44px; height: 44px; border-radius: 50%; background: conic-gradient(var(--gold) calc(var(--g, 0) * 360deg), rgba(238, 240, 236, .16) 0); }
-.hold__btn i::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--night); box-shadow: inset 0 0 0 1px rgba(238, 240, 236, .2); }
+.hold__btn i { order: -1; position: relative; width: 44px; height: 44px; border-radius: 50%; background: conic-gradient(var(--gold) calc(var(--g, 0) * 360deg), rgba(26, 30, 37, .14) 0); }
+.hold__btn i::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--paper); }
 .hold__btn i::before { content: ""; position: absolute; z-index: 1; inset: 17px; border-radius: 50%; background: var(--gold); scale: calc(.6 + var(--g, 0) * .8); }
-.hold__btn:hover { background: rgba(238, 240, 236, .14); }
-.hold__btn[aria-pressed="true"] { scale: .96; border-color: var(--gold); background: rgba(240, 180, 138, .14); }
+.hold__btn:hover { background: var(--paper); }
+.hold__btn[aria-pressed="true"] { scale: .96; border-color: var(--gold); }
 .hold__btn[aria-pressed="true"] span::after { content: "…"; }
-/* no desktop o botão é só um lembrete: segurar em qualquer lugar funciona */
-@media (hover: hover) and (pointer: fine) { .hold__btn span { font-size: 0; } .hold__btn span::before { content: "Segure em qualquer lugar"; font-size: 11px; } }
-.cur--ring.grip { width: 22px; height: 22px; margin: -11px 0 0 -11px; background: rgba(240, 180, 138, .3); border-width: 2px; }
+@media (hover: hover) and (pointer: fine) { .hold__btn span { font-size: 0; } .hold__btn span::before { content: "Segure em qualquer lugar"; font-size: 10.5px; } }
+.cur--ring.grip { width: 22px; height: 22px; margin: -11px 0 0 -11px; background: rgba(176, 57, 31, .25); border-width: 2px; }
+
+/* ===== Ato 2: o livro ===== */
+.m .page { background: var(--paper); }
+.m .tear { background: var(--paper); }
+.m .page section { max-width: 1240px; margin: 0 auto; }
+.m .kick { color: var(--gold); display: flex; align-items: center; gap: 14px; }
+.m .kick::before { content: "§"; font: italic 400 22px/1 var(--f-serif); letter-spacing: 0; }
+.m .big { font: 300 clamp(52px, 7vw, 124px)/.92 var(--f-serif); letter-spacing: -.015em; max-width: 15ch; }
+.m .big .sw { font-size: 1em; color: var(--gold); }
+.m .lede { font: 400 clamp(22px, 2vw, 30px)/1.38 var(--f-serif); text-indent: 0; max-width: 32em; column-gap: 50px; }
+.m .lede::first-letter { float: left; margin: .05em .1em 0 0; font: 400 4.2em/.76 var(--f-serif); color: var(--gold); }
+
+/* seis coisas para soltar: pranchas de livro, sem leque nem cantos redondos */
+.m .deck { height: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 46px 34px; perspective: 1600px; margin-top: 80px; }
+.m .dc, .m .dc:hover { position: relative; left: auto; top: auto; width: auto; aspect-ratio: 4 / 5; transform: none; box-shadow: none; }
+.m .dc:nth-child(3n + 2) { margin-top: 60px; }
+.m .dc:nth-child(3n) { margin-top: 120px; }
+.m .dc__f, .m .dc__b { border-radius: 0; }
+.m .dc__f { background: #f7f4ec; padding: 14px 14px 0; box-shadow: 0 0 0 1px rgba(26, 30, 37, .22), 0 30px 50px -36px rgba(26, 30, 37, .6); }
+.m .dc img { border-radius: 0; height: 78%; filter: grayscale(.2) contrast(1.02); }
+.m .dc figcaption { flex-direction: row; justify-content: flex-start; gap: 12px; font: italic 400 clamp(22px, 1.9vw, 30px)/1 var(--f-serif); letter-spacing: 0; }
+.m .dc figcaption .mono { color: var(--gold); font-style: normal; }
+.m .dc__b { background: var(--ink); color: var(--paper); box-shadow: inset 0 0 0 10px var(--ink), inset 0 0 0 11px rgba(239, 235, 226, .3); }
+.m .dc__b .mono { color: #e0866e; }
+.m .dc__b p { font: italic 400 clamp(20px, 1.7vw, 27px)/1.25 var(--f-serif); }
+
+/* a vida dele: índice de livro, com pontilhado até a página */
+.m .cast { margin-top: 70px; }
+.m .cast li { grid-template-columns: 90px auto 1fr; gap: 22px; padding: 20px 0 16px; border-top: 1px dotted rgba(26, 30, 37, .35); }
+.m .cast li:last-child { border-bottom: 1px dotted rgba(26, 30, 37, .35); }
+.m .cast b { font: 300 clamp(32px, 3.8vw, 64px)/.95 var(--f-serif); letter-spacing: -.01em; }
+.m .cast i { font: italic 400 clamp(18px, 1.4vw, 22px)/1.35 var(--f-serif); }
+.m .cast .mono { color: var(--gold); font-size: 13px; letter-spacing: .14em; }
+.m .cast li:hover b { color: var(--gold); }
+.m .cast__peek { filter: drop-shadow(0 30px 40px rgba(26, 30, 37, .3)) grayscale(.15); }
+
+/* pergunta: botões como etiquetas de arquivo */
+.m .pill { border-radius: 2px; font: 600 15px/1 var(--f-sans); letter-spacing: .02em; padding: 15px 22px 14px; }
+.m .pick__a { font: italic 400 clamp(22px, 1.9vw, 29px)/1.38 var(--f-serif); }
+
+/* vídeo: filete duplo em vez de moldura dourada */
+.m .frame { border-radius: 0; background: var(--paper); padding: 10px; box-shadow: 0 0 0 1px var(--ink), 0 0 0 6px var(--paper), 0 0 0 7px var(--ink), 0 50px 90px -40px rgba(26, 30, 37, .5); }
+.m .player { background: var(--ink); }
+.m .player__play { background: var(--paper); color: var(--gold); }
+.m .player__cap { color: #f4f1ea; }
+
+/* colofão */
+.m .foot__t { font: 300 clamp(60px, 9vw, 170px)/.9 var(--f-serif); letter-spacing: -.015em; }
+.m .foot__t .sw { color: var(--gold); }
+.m .foot__q p { font: italic 400 clamp(24px, 2.4vw, 38px)/1.2 var(--f-serif); }
+.m .btn { border-radius: 2px; font: 600 16px/1 var(--f-sans); letter-spacing: .02em; }
+.m .btn:hover { background: var(--gold); }
+.m .foot__cols p { font: 400 17px/1.4 var(--f-serif); }
+.m .next { border-radius: 2px; }
+.m .next b { font: 300 clamp(30px, 3.6vw, 60px)/1 var(--f-serif); letter-spacing: -.01em; }
 
 @media (max-width: 860px) {
+  .m .st--hero, .m .st--l, .m .st--r, .m .st--c { left: var(--gut); right: var(--gut); max-width: none; }
+  .m .st__t, .m .st--hero .st__t { font-size: clamp(44px, 12vw, 76px); }
+  .m .st__t--list { font-size: clamp(30px, 8.2vw, 52px); }
+  .m .st__p { font-size: 17px; }
+  .m .deck { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px 14px; }
+  .m .dc:nth-child(3n + 2), .m .dc:nth-child(3n) { margin-top: 0; }
+  .m .dc:nth-child(even) { margin-top: 36px; }
+  .m .cast li { grid-template-columns: 60px 1fr; }
   .hold .core__flat { width: 92vw; height: auto; bottom: auto; }
   .hold .cap { bottom: 17vh; }
+  .hold .cap h3 { font-size: clamp(52px, 15vw, 86px); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .hold .core__flat { transition: none; }
-}
-
-/* as frases de Montaigne são mais longas que as do Idiota */
-.m .st--hero { max-width: calc(100vw - 2 * var(--gut) - 190px); }
-.m .st--hero .st__t { font-size: clamp(52px, 8.4vw, 150px); }
-@media (max-width: 860px) {
-  .m .st--hero { max-width: none; }
-  .m .st--hero .st__t { font-size: clamp(38px, 10.6vw, 72px); }
-}
+@media (prefers-reduced-motion: reduce) { .hold .core__flat { transition: none; } }
