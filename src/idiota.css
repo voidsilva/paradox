@@ -50,3 +50,31 @@
 .copy { text-align: left; }
 
 @media (prefers-reduced-motion: reduce) { .smolder { display: none; } }
+
+/* cursor: brasa */
+.cur:not(.cur--ring) { width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; background: #ffb062; mix-blend-mode: normal;
+  box-shadow: 0 0 8px 2px rgba(255, 110, 30, .8), 0 0 22px 6px rgba(255, 90, 20, .25); animation: emberc 1.3s steps(5) infinite; }
+.hdr.on-page ~ .cur:not(.cur--ring) { background: var(--ink); box-shadow: none; }
+@keyframes emberc { 0%, 100% { opacity: 1; } 40% { opacity: .75; } 70% { opacity: .92; } }
+.sparks { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 199; pointer-events: none; }
+
+/* pavio no topo */
+.fuse { position: fixed; z-index: 60; top: 0; left: calc(var(--p, 0) * 100%); right: 0; height: 2px; pointer-events: none;
+  background: repeating-linear-gradient(90deg, rgba(241, 232, 216, .32) 0 5px, rgba(241, 232, 216, .14) 5px 8px); transition: background .5s; }
+.fuse i { position: absolute; left: -3px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #ffd08a;
+  box-shadow: 0 0 6px 2px #ff8a2a, 0 0 18px 6px rgba(255, 90, 20, .45); animation: emberc .9s steps(4) infinite; }
+.fuse i::after { content: ""; position: absolute; right: 100%; top: 3px; width: 40px; height: 2px; background: linear-gradient(90deg, transparent, rgba(255, 120, 40, .6)); }
+.fuse.paper { background: repeating-linear-gradient(90deg, rgba(27, 19, 13, .35) 0 5px, rgba(27, 19, 13, .15) 5px 8px); }
+@media (max-width: 860px) { .fuse { height: 2px; } }
+
+/* cartas: chamuscado onde a mão passa (frente) e brasa nas bordas do verso */
+.dc__f::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .5s;
+  background: radial-gradient(circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 150, 60, .55), rgba(150, 60, 20, .25) 14%, rgba(40, 20, 10, 0) 34%); mix-blend-mode: multiply; }
+.dc:hover .dc__f::after { opacity: 1; }
+.dc__b { box-shadow: inset 0 0 0 1px rgba(217, 173, 98, .35), inset 0 0 40px rgba(255, 110, 30, .18); }
+.dc__b::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 140, 50, .28), transparent 40%); }
+
+/* elenco: o nome esquenta ao passar a mão */
+.cast li b { transition: color .6s, text-shadow .6s; }
+.cast li:hover b { color: var(--ember); text-shadow: 0 0 .35em rgba(255, 120, 40, .35); }

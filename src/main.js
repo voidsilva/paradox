@@ -355,6 +355,12 @@ cards.forEach(c => {
   c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.classList.toggle('flip'); } });
 });
 cards.forEach((c, k) => c.style.setProperty('--i', (k - (cards.length - 1) / 2).toFixed(2)));
+// a mão chamusca a carta por onde passa
+cards.forEach(c => c.addEventListener('pointermove', e => {
+  const r = c.getBoundingClientRect();
+  c.style.setProperty('--sx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+  c.style.setProperty('--sy', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+}, { passive: true }));
 
 // títulos da página: letras sobem quando entram na tela; o resto aparece em sequência
 $$('.big, .foot__t').forEach(h => { splitChars(h); h.classList.add('rv'); });
@@ -405,11 +411,23 @@ function updatePage() {
   deck.style.setProperty('--open', open.toFixed(3));
 }
 
+// pavio: a linha do topo queima da esquerda para a direita conforme a leitura avança
+const fuse = document.createElement('div'); fuse.className = 'fuse'; fuse.setAttribute('aria-hidden', 'true');
+fuse.innerHTML = '<i></i>';
+document.body.append(fuse);
+function updateFuse() {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  const p = max > 0 ? clamp(scrollY / max) : 0;
+  fuse.style.setProperty('--p', p.toFixed(4));
+  fuse.classList.toggle('paper', hdr.classList.contains('on-page'));
+}
+
 let lastY = scrollY, ticking = false;
 function onScroll() {
   updateWorld();
   updateCore();
   updatePage();
+  updateFuse();
   const dy = scrollY - lastY; lastY = scrollY;
   if (world && !reduced) world.kick(dy);
 }
@@ -439,6 +457,48 @@ if (finePointer && !reduced && !STILL) {
     requestAnimationFrame(follow);
   };
   follow();
+
+  // o cursor é uma brasa: quanto mais rápido a mão, mais faíscas.
+  // No escuro elas sobem acesas; no papel caem como cinza.
+  const sc = document.createElement('canvas'); sc.className = 'sparks'; sc.setAttribute('aria-hidden', 'true');
+  document.body.append(sc);
+  const sg = sc.getContext('2d');
+  let sw = 0, sh = 0; const dpr = Math.min(2, devicePixelRatio || 1);
+  const sz = () => { sw = innerWidth; sh = innerHeight; sc.width = sw * dpr; sc.height = sh * dpr; sg.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  sz(); addEventListener('resize', sz);
+  const P = []; let px = x, py = y, onPaper = false, idleF = 0;
+  addEventListener('pointermove', e => {
+    const dx = e.clientX - px, dy = e.clientY - py, sp = Math.hypot(dx, dy);
+    px = e.clientX; py = e.clientY;
+    const n = Math.min(6, Math.floor(sp / 9));
+    for (let i = 0; i < n && P.length < 220; i++) {
+      const t = i / Math.max(1, n);
+      P.push({ x: px - dx * t, y: py - dy * t, vx: (Math.random() - .5) * 1.4 - dx * .04, vy: (Math.random() - .5) * 1.4 - dy * .04 - (onPaper ? 0 : .6), l: 1, d: .012 + Math.random() * .022, s: .6 + Math.random() * 1.6, ash: onPaper });
+    }
+  }, { passive: true });
+  const tickS = () => {
+    requestAnimationFrame(tickS);
+    onPaper = hdr.classList.contains('on-page');
+    if (!P.length) { if (idleF++ === 0) sg.clearRect(0, 0, sw, sh); return; }
+    idleF = 0;
+    sg.clearRect(0, 0, sw, sh);
+    sg.globalCompositeOperation = onPaper ? 'source-over' : 'lighter';
+    for (let i = P.length - 1; i >= 0; i--) {
+      const q = P[i];
+      q.l -= q.d; if (q.l <= 0) { P.splice(i, 1); continue; }
+      q.vx += Math.sin(q.y * .05 + q.l * 6) * .04; q.vx *= .97;
+      q.vy = q.ash ? q.vy * .96 + .05 : q.vy * .97 - .045;
+      q.x += q.vx; q.y += q.vy;
+      if (q.ash) { sg.fillStyle = `rgba(40,24,14,${(q.l * .55).toFixed(3)})`; sg.fillRect(q.x, q.y, q.s * 1.3, q.s * 1.3); continue; }
+      const r = q.s * (.6 + q.l);
+      const g = sg.createRadialGradient(q.x, q.y, 0, q.x, q.y, r * 4);
+      g.addColorStop(0, `rgba(255,${(150 + 80 * q.l) | 0},${(60 + 90 * q.l) | 0},${q.l.toFixed(3)})`);
+      g.addColorStop(.3, `rgba(255,100,25,${(q.l * .45).toFixed(3)})`);
+      g.addColorStop(1, 'rgba(255,80,20,0)');
+      sg.fillStyle = g; sg.beginPath(); sg.arc(q.x, q.y, r * 4, 0, 6.2832); sg.fill();
+    }
+  };
+  tickS();
   // botões magnéticos
   $$('.btn, .pill, .player__play').forEach(b => {
     const host = b.classList.contains('player__play') ? b.parentElement : b;
