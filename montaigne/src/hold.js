@@ -114,7 +114,7 @@ export async function createHold({ canvas, tier = 'high', still = false, asset =
   scene.add(shadow);
 
   // lascas: quando você solta, a pintura presa vira centenas de pedaços que o vento leva
-  const N = HIGH ? 900 : 380;
+  const N = HIGH ? 420 : 200;
   const flakeGeo = new THREE.PlaneGeometry(1, 1);
   const aU = new Float32Array(N * 2), aR = new Float32Array(N * 4);
   for (let i = 0; i < N; i++) { aU.set([Math.random(), Math.random()], i * 2); aR.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4); }
@@ -123,16 +123,16 @@ export async function createHold({ canvas, tier = 'high', still = false, asset =
   const flakeU = { tA: { value: texs[0] }, uCropA: { value: crop(texs[0]) }, uT: { value: 0 }, uTime: { value: 0 } };
   const flakes = new THREE.InstancedMesh(flakeGeo, new THREE.ShaderMaterial({
     transparent: true, side: THREE.DoubleSide, depthWrite: false, uniforms: flakeU,
-    vertexShader: `attribute vec2 aU; attribute vec4 aR; uniform float uT, uTime; varying vec2 vU; varying float vA, vL;
+    vertexShader: `attribute vec2 aU; attribute vec4 aR; uniform float uT, uTime; varying vec2 vU; varying vec2 vQ; varying float vA, vL;
       mat3 rx(float a){ float c=cos(a), s=sin(a); return mat3(1.,0.,0., 0.,c,s, 0.,-s,c); }
       mat3 ry(float a){ float c=cos(a), s=sin(a); return mat3(c,0.,-s, 0.,1.,0., s,0.,c); }
       void main(){
-        vU = aU;
+        vU = aU; vQ = position.xy;
         // cada lasca sai na hora em que a borda da troca passa por ela
         float t0 = (1. - aU.x) * .55 + aR.w * .12;
         float t = clamp((uT - t0) / (1. - t0 * .6), 0., 1.);
         vec3 o = vec3((aU - .5) * vec2(${W.toFixed(1)}, ${H.toFixed(1)}), .05);
-        float s = (.1 + aR.x * .26) * (1. - t * .5);
+        float s = (.24 + aR.x * .42) * (1. - t * .4);
         vec3 p = rx(t * (4. + aR.y * 9.)) * ry(t * (3. + aR.z * 7.)) * (position * vec3(s, s * (.5 + aR.z * .8), 1.));
         vec3 w = vec3(t * (9. + aR.x * 22.), t * (2. + aR.y * 7.) + sin(t * 8. + aR.z * 6.) * .6 * t, t * (4. + aR.z * 14.));
         vA = step(.0001, t) * (1. - smoothstep(.65, 1., t));
@@ -140,7 +140,17 @@ export async function createHold({ canvas, tier = 'high', still = false, asset =
         gl_Position = projectionMatrix * modelViewMatrix * vec4(o + w + p, 1.);
       }`,
     fragmentShader: `uniform sampler2D tA; uniform vec4 uCropA; varying vec2 vU; varying float vA, vL;
-      void main(){ if (vA < .01) discard; vec3 c = texture2D(tA, uCropA.xy + vU * uCropA.zw).rgb * vL; gl_FragColor = vec4(c, vA); }`,
+      varying vec2 vQ;
+      float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      void main(){
+        if (vA < .01) discard;
+        // lasca de papel: borda rasgada e verso cor de papel
+        vec2 q = vQ; float e = max(abs(q.x), abs(q.y)) + (h(floor(q * 9.) + vU * 50.) - .5) * .12;
+        if (e > .46) discard;
+        vec3 c = gl_FrontFacing ? texture2D(tA, uCropA.xy + vU * uCropA.zw).rgb * vL : vec3(.94, .92, .87) * vL;
+        c = mix(c, vec3(.96, .94, .9), smoothstep(.36, .45, e) * .8);
+        gl_FragColor = vec4(c, vA);
+      }`,
   }), N);
   flakes.frustumCulled = false;
   const dummy = new THREE.Matrix4();
