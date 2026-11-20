@@ -49,14 +49,17 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
   key.shadow.bias = -.0006; key.shadow.normalBias = .02;
   scene.add(key, key.target);
   const rim = new THREE.DirectionalLight(0xa9c4ff, .9); rim.position.set(20, 4, -10); scene.add(rim);
+  const torch = new THREE.PointLight(0xffc98a, 0, 0, 1.6); scene.add(torch);
+  const torchAt = new THREE.Vector3(), torchTo = new THREE.Vector3();
+  let torchOn = 0;
   scene.environment = studioEnv(renderer);
 
   // céu dividido: brasa embaixo à esquerda, névoa em cima à direita (é desenhado na primeira passada)
   const sky = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false,
-    uniforms: { uT: { value: 0 }, uYaw: { value: 0 }, uAsp: { value: 1 }, uOpen: { value: 0 } },
+    uniforms: { uT: { value: 0 }, uYaw: { value: 0 }, uAsp: { value: 1 }, uOpen: { value: 0 }, uM: { value: new THREE.Vector3(.5, .5, 0) } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, .999, 1.); }',
-    fragmentShader: `uniform float uT, uYaw, uAsp, uOpen; varying vec2 vUv;
+    fragmentShader: `uniform float uT, uYaw, uAsp, uOpen; uniform vec3 uM; varying vec2 vUv;
       float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f); return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + 1.), f.x), f.y); }
       float fbm(vec2 p){ float s = 0., a = .5; for (int i = 0; i < 5; i++) { s += a * n(p); p *= 2.03; a *= .5; } return s; }
@@ -72,12 +75,38 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
         c = mix(c, ember, smoothstep(.62, 1.05, 1. - diag) * .9);
         c = mix(c, mist, smoothstep(.62, 1.05, diag) * .75);
         c *= 1. - .35 * length(q) * (1. - uOpen * .3);
+        vec2 mq = vec2((vUv.x - uM.x) * uAsp, vUv.y - uM.y);
+        c += vec3(.2, .11, .05) * exp(-dot(mq, mq) * 9.) * uM.z;
         c += (h(vUv * 1000. + uT) - .5) * .015;
         gl_FragColor = vec4(c, 1.);
       }`,
   }));
   sky.frustumCulled = false; sky.renderOrder = -10; sky.layers.set(1);
   scene.add(sky);
+
+  const ND = low ? 260 : 700;
+  const dGeo = new THREE.BufferGeometry();
+  const dP = new Float32Array(ND * 3), dR = new Float32Array(ND);
+  for (let i = 0; i < ND; i++) { dP.set([(Math.random() - .5) * 46, (Math.random() - .5) * 46, (Math.random() - .5) * 46], i * 3); dR[i] = Math.random(); }
+  dGeo.setAttribute('position', new THREE.BufferAttribute(dP, 3));
+  dGeo.setAttribute('aR', new THREE.BufferAttribute(dR, 1));
+  const dustU = { uT: { value: 0 }, uLp: { value: torchAt }, uOn: { value: 0 }, uPx: { value: renderer.getPixelRatio() }, uZ: { value: 1 } };
+  const dust = new THREE.Points(dGeo, new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, uniforms: dustU,
+    vertexShader: `attribute float aR; uniform float uT, uOn, uPx, uZ; uniform vec3 uLp; varying float vA;
+      void main(){
+        vec3 p = position;
+        p.y = mod(p.y + uT * (.25 + aR * .5) + 23., 46.) - 23.;
+        p.x += sin(uT * .3 + aR * 20.) * 1.2; p.z += cos(uT * .23 + aR * 13.) * 1.2;
+        vec4 mv = modelViewMatrix * vec4(p, 1.);
+        float d = distance(p, uLp);
+        vA = (.12 + .5 * aR) * (.35 + 2.6 * uOn * exp(-d * d / 30.)) * (.6 + .4 * sin(uT * 2. + aR * 40.));
+        gl_PointSize = (1.2 + aR * 2.6) * uPx * mix(1., uZ, .5);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `varying float vA; void main(){ vec2 q = gl_PointCoord - .5; float a = smoothstep(.5, 0., length(q)); gl_FragColor = vec4(vec3(1., .82, .55) * a * vA, 1.); }`,
+  }));
+  dust.frustumCulled = false; dust.renderOrder = 10; scene.add(dust);
 
   // ---------- texturas ----------
   const loader = new THREE.TextureLoader();
@@ -393,10 +422,13 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
       drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
       raw.y -= dx * .0048; raw.p += dy * .0038;
       cam.yaw = band(raw.y, .62); cam.pitch = band(raw.p, .36);
+      const r = canvas.getBoundingClientRect();
+      ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
       return;
     }
     const p = pick(e.clientX, e.clientY);
     setHover(p);
+    torchOn = 1;
   });
   const up = e => {
     if (!drag) return;
@@ -406,7 +438,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
   };
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', () => { drag = null; });
-  canvas.addEventListener('pointerleave', () => { if (!drag) setHover(null); });
+  canvas.addEventListener('pointerleave', () => { if (!drag) setHover(null); torchOn = 0; });
   function setHover(p) {
     if (p === hover) return;
     hover = p;
@@ -482,6 +514,20 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
       if (p.fx) { p.fx.mat.uniforms.uT.value = t; p.fx.mat.uniforms.uA.value = .35 + p.hov * .8; p.fx.mat.uniforms.uZ.value = cam.zoom; }
       p.hit.getWorldPosition(p.center);
     }
+    // lanterna: o raio do cursor encontra o plano do objeto e a luz fica um pouco à frente dele
+    if (torchOn) {
+      ray.setFromCamera(ptr, camera);
+      const dir = camDir();
+      const t0 = -ray.ray.origin.dot(dir) / ray.ray.direction.dot(dir);
+      torchTo.copy(ray.ray.origin).addScaledVector(ray.ray.direction, t0).addScaledVector(dir, 6.5);
+      if (!torchAt.lengthSq()) torchAt.copy(torchTo);
+      torchAt.lerp(torchTo, 1 - Math.pow(.004, dt));
+      torch.position.copy(torchAt);
+    }
+    const tOn = torchOn && !entering ? 1 : 0;
+    torch.intensity += ((tOn ? 90 : 0) - torch.intensity) * (1 - Math.pow(.05, dt));
+    dustU.uT.value = t; dustU.uOn.value = torch.intensity / 90; dustU.uZ.value = cam.zoom;
+    sky.material.uniforms.uM.value.set(ptr.x * .5 + .5, ptr.y * .5 + .5, torch.intensity / 90);
     // duas passadas quando fechado: a terceira viga fica atrás de tudo
     const su = sky.material.uniforms; su.uT.value = t; su.uYaw.value = cam.yaw; su.uAsp.value = W / H; su.uOpen.value += ((closed ? 0 : 1) - su.uOpen.value) * .1;
     renderer.clear();

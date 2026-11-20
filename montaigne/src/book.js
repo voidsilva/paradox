@@ -26,6 +26,23 @@ const H = .04;         // espessura da capa
 const B = .07;         // espessura total do miolo
 const E = .0016;       // espaço entre folhas
 
+
+// luz de janela: o sol da tarde entra pela janela da torre e desenha os caixilhos e a sombra das folhas lá fora
+const GOBO = /* glsl */`
+float gobo(vec3 w, float t){
+  vec3 ld = normalize(vec3(-.55, 1., -.42));
+  vec2 p = w.xz - ld.xz / ld.y * w.y;
+  p -= vec2(-.05 + sin(t * .17) * .025, -.02);
+  p = mat2(.94, -.34, .34, .94) * p;
+  vec2 q = p / vec2(1.85, 1.2);
+  float win = smoothstep(1., .9, abs(q.x)) * smoothstep(1., .86, abs(q.y));
+  float bars = smoothstep(.006, .03, abs(q.x)) * smoothstep(.006, .03, abs(q.y)) * smoothstep(.006, .025, abs(abs(q.x) - .5));
+  float lv = sin(p.x * 7. + sin(p.y * 5. + t * .6) * 2.2 + t * .35) * sin(p.y * 6. - t * .4 + p.x * 2.);
+  float leaves = 1. - .35 * smoothstep(.25, .7, lv) * smoothstep(-.2, .6, q.y + q.x * .3);
+  return win * bars * leaves;
+}
+vec3 sunlit(vec3 col, vec3 w, float t){ float g = gobo(w, t); return col * (.9 + g * vec3(.24, .2, .13)); }`;
+
 const LEAF_VS = /* glsl */`
 uniform float uA, uY0, uY1, uK, uFly, uFull;
 uniform vec3 uSeed;
@@ -68,7 +85,8 @@ void main(){
 
 const LEAF_FS = /* glsl */`
 uniform sampler2D uFront, uBack;
-uniform float uFull, uA;
+uniform float uFull, uA, uTime;
+${GOBO}
 uniform vec3 uFog, uL;
 uniform float uFogN, uFogF;
 varying vec2 vUv;
@@ -91,6 +109,7 @@ void main(){
   vec3 col = t.rgb * l * g;
   // brilho de papel na borda que vira
   col += vec3(.05) * pow(1. - abs(n.y), 3.) * dif;
+  col = sunlit(col, vW, uTime);
   float d = distance(vW, cameraPosition);
   col = mix(col, uFog, smoothstep(uFogN, uFogF, d));
   gl_FragColor = vec4(col, 1.);
@@ -101,29 +120,24 @@ const FIG_VS = /* glsl */`
 varying vec2 vUv; varying vec3 vW; varying vec3 vN;
 void main(){ vUv = uv; vN = normalize(mat3(modelMatrix) * normal); vec4 wp = modelMatrix * vec4(position, 1.); vW = wp.xyz; gl_Position = projectionMatrix * viewMatrix * wp; }`;
 
-// figura recortada: borda branca de papel em volta (como um recorte colado num cartão)
+// camada de papel do teatro: o recorte já vem desenhado no canvas (bordas rasgadas), aqui só luz e verso
 const FIG_FS = /* glsl */`
 uniform sampler2D uMap;
-uniform vec2 uPx;
 uniform vec3 uFog, uL, uPaper;
-uniform float uFogN, uFogF, uO;
+uniform float uFogN, uFogF, uO, uTime;
 varying vec2 vUv; varying vec3 vW; varying vec3 vN;
+${GOBO}
 void main(){
   vec4 t = texture2D(uMap, vUv);
-  float a = t.a;
-  float rim = 0.;
-  for (int i = 0; i < 12; i++) {
-    float an = float(i) * 0.5236;
-    rim = max(rim, texture2D(uMap, vUv + vec2(cos(an), sin(an)) * uPx * 9.).a);
-  }
-  float edge = max(a, smoothstep(.25, .6, rim));
-  if (edge < .5) discard;
+  if (t.a < .5) discard;
   vec3 n = normalize(vN);
   vec3 col;
-  if (gl_FrontFacing) col = mix(uPaper, t.rgb, smoothstep(.45, .8, a));
-  else { n = -n; col = uPaper * .86; }
-  float l = .62 + .46 * max(dot(n, normalize(uL)), 0.);
-  col *= l;
+  if (gl_FrontFacing) col = t.rgb;
+  else { n = -n; col = uPaper * .84; }
+  float l = .64 + .44 * max(dot(n, normalize(uL)), 0.);
+  // a base da camada fica mais escura (encosta na página)
+  col *= l * mix(.82, 1., smoothstep(0., .12, vUv.y));
+  col = sunlit(col, vW, uTime);
   float d = distance(vW, cameraPosition);
   col = mix(col, uFog, smoothstep(uFogN, uFogF, d));
   gl_FragColor = vec4(col, uO);
@@ -143,8 +157,9 @@ void main(){
 const TABLE_FS = /* glsl */`
 uniform vec3 uFog, uTab;
 uniform vec4 uRect;
-uniform float uFogN, uFogF, uLift;
+uniform float uFogN, uFogF, uLift, uTime;
 varying vec3 vW;
+${GOBO}
 float sdBox(vec2 p, vec2 b){ vec2 d = abs(p) - b; return length(max(d, 0.)) + min(max(d.x, d.y), 0.); }
 float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main(){
@@ -153,7 +168,7 @@ void main(){
   float sh = exp(-max(s, 0.) * 7.) * .26 + exp(-max(s, 0.) * 1.6) * .12;
   sh *= 1. - uLift;
   float lin = (h(floor(p * 220.)) - .5) * .025 + sin(p.x * 260. + sin(p.y * 7.) * 2.) * .006;
-  vec3 col = uTab * (1. - sh) + lin;
+  vec3 col = sunlit(uTab * (1. - sh) + lin, vW, uTime);
   float d = distance(vW, cameraPosition);
   col = mix(col, uFog, smoothstep(uFogN * .8, uFogF, d));
   gl_FragColor = vec4(col, 1.);
@@ -180,7 +195,7 @@ function cover(g, img, x, y, w, h, fx = .5, fy = .5) {
   g.drawImage(img, (img.width - sw) * fx, (img.height - sh) * fy, sw, sh, x, y, w, h);
 }
 
-export async function createBook({ canvas, tier = 'high', still = false, scenes, labels = [], dir = 'montaigne/img/', asset = u => u, onProgress = () => {} }) {
+export async function createBook({ canvas, tier = 'high', still = false, scenes, labels = [], pages = [], dir = 'montaigne/img/', asset = u => u, onProgress = () => {} }) {
   const low = tier === 'low';
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !low, alpha: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, low ? 1.25 : 1.75));
@@ -197,7 +212,7 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
   // ---------- imagens ----------
   const N = scenes.length;
   const need = new Set();
-  scenes.forEach(s => { need.add('paint/' + s.bg + '.jpg'); s.cuts.slice(0, 1).forEach(c => need.add('cut/' + c.k + '.webp')); });
+  scenes.forEach(s => need.add('paint/' + s.bg + '.jpg'));
   const imgs = {};
   let done = 0;
   await Promise.all([...need].map(async k => {
@@ -210,39 +225,69 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
   const GR = grain();
   const serif = '"EB Garamond", Garamond, Georgia, serif', sans = '"Instrument Sans", "Helvetica Neue", Arial, sans-serif';
 
-  // ---------- páginas duplas: pintura impressa, títulos correntes, legenda e número ----------
+  // ---------- páginas duplas: o ensaio composto à esquerda; à direita, o chão do teatro de papel ----------
   const TW = low ? 1400 : 2048, TH = Math.round(TW * D / (2 * W));
+  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  function wrap(g, text, maxW) {
+    const out = []; let line = '';
+    for (const w of text.split(/\s+/)) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; }
+    if (line) out.push(line);
+    return out;
+  }
   const spreads = scenes.map((s, i) => {
     const c = document.createElement('canvas'); c.width = TW; c.height = TH;
     const g = c.getContext('2d');
+    const k = TW / 2048, HW = TW / 2;
     g.fillStyle = '#efebe2'; g.fillRect(0, 0, TW, TH);
-    const k = TW / 2048;
-    const mx = 70 * k, mt = 74 * k, mb = 96 * k;
-    // a pintura atravessa as duas páginas, como numa prancha
-    g.save();
-    g.beginPath(); g.rect(mx, mt, TW - 2 * mx, TH - mt - mb); g.clip();
-    cover(g, imgs['paint/' + s.bg + '.jpg'], mx, mt, TW - 2 * mx, TH - mt - mb, .5, .45);
-    g.restore();
-    // tinta no papel: o grão passa por cima da imagem
-    g.globalCompositeOperation = 'multiply'; g.globalAlpha = .55;
-    const pat = g.createPattern(GR, 'repeat'); g.fillStyle = pat; g.fillRect(0, 0, TW, TH);
-    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
-    // filete em volta da prancha
-    g.strokeStyle = 'rgba(26,30,37,.55)'; g.lineWidth = 1.5 * k; g.strokeRect(mx - 9 * k, mt - 9 * k, TW - 2 * mx + 18 * k, TH - mt - mb + 18 * k);
-    // títulos correntes
-    g.fillStyle = 'rgba(26,30,37,.62)'; g.font = `600 ${15 * k}px ${sans}`;
-    if ('letterSpacing' in g) g.letterSpacing = `${4 * k}px`;
+    const pg = pages[i] || {};
+    const mx = 110 * k, ink = '#1f232a', red = '#b0391f';
     g.textBaseline = 'alphabetic';
-    g.textAlign = 'left'; g.fillText('MONTAIGNE', mx, mt - 30 * k);
-    g.textAlign = 'right'; g.fillText('ENSAIOS · LIVRO III', TW - mx, mt - 30 * k);
+    // títulos correntes
+    g.fillStyle = 'rgba(31,35,42,.6)'; g.font = `600 ${14 * k}px ${sans}`;
+    if ('letterSpacing' in g) g.letterSpacing = `${5 * k}px`;
+    g.textAlign = 'center'; g.fillText('MONTAIGNE · ENSAIOS', HW / 2, 62 * k); g.fillText('LIVRO III', HW + HW / 2, 62 * k);
     if ('letterSpacing' in g) g.letterSpacing = '0px';
-    // legenda em vermelho e número das páginas
-    g.font = `italic 400 ${30 * k}px ${serif}`; g.fillStyle = '#b0391f'; g.textAlign = 'left';
-    g.fillText(labels[i] || '', mx, TH - mb + 52 * k);
-    g.font = `400 ${26 * k}px ${serif}`; g.fillStyle = 'rgba(26,30,37,.7)';
-    g.textAlign = 'center';
-    g.fillText(String(12 + i * 2), TW * .25, TH - 26 * k);
-    g.fillText(String(13 + i * 2), TW * .75, TH - 26 * k);
+    // capítulo
+    const num = (pg.num || '').split('—');
+    g.textAlign = 'left';
+    g.fillStyle = red; g.font = `italic 400 ${96 * k}px ${serif}`;
+    g.fillText(i === 0 ? 'Ao leitor' : (num[0] || ROMAN[i]).trim(), mx, 190 * k);
+    g.fillStyle = ink; g.font = `400 ${40 * k}px ${serif}`;
+    g.fillText(i === 0 ? 'Quanto mais segura, mais escapa' : (num[1] || '').trim(), mx, 252 * k);
+    g.fillStyle = red; g.fillRect(mx, 282 * k, 64 * k, 2 * k);
+    // parágrafo com capitular
+    const body = (pg.p || '').trim();
+    if (body) {
+      g.font = `400 ${25 * k}px ${serif}`;
+      const lh = 37 * k, top = 344 * k, cap = body[0], rest = body.slice(1);
+      const capW = 74 * k;
+      g.fillStyle = red; g.font = `400 ${118 * k}px ${serif}`; g.fillText(cap, mx - 4 * k, top + lh * 1.95);
+      g.fillStyle = ink; g.font = `400 ${25 * k}px ${serif}`;
+      const full = HW - 2 * mx;
+      const first = wrap(g, rest, full - capW).slice(0, 3);
+      let used = first.join(' ').length;
+      first.forEach((ln, n) => g.fillText(ln, mx + capW, top + lh * n));
+      const more = wrap(g, rest.slice(used).trim(), full);
+      more.slice(0, 7).forEach((ln, n) => g.fillText(ln, mx, top + lh * (3 + n)));
+    }
+    // vinheta e número
+    g.textAlign = 'center'; g.fillStyle = red; g.font = `400 ${26 * k}px ${serif}`;
+    g.fillText('·  ❦  ·', HW / 2, TH - 92 * k);
+    g.fillStyle = 'rgba(31,35,42,.7)'; g.font = `400 ${24 * k}px ${serif}`;
+    g.fillText(String(12 + i * 2), HW / 2, TH - 40 * k);
+    g.fillText(String(13 + i * 2), HW + HW / 2, TH - 40 * k);
+    // página da direita: a pintura impressa bem clara, como o chão do cenário
+    g.save();
+    g.beginPath(); g.rect(HW + 70 * k, 100 * k, HW - 140 * k, TH - 230 * k); g.clip();
+    g.globalAlpha = .2; if ('filter' in g) g.filter = 'grayscale(.7) sepia(.5) blur(1px)';
+    cover(g, imgs['paint/' + s.bg + '.jpg'], HW + 70 * k, 100 * k, HW - 140 * k, TH - 230 * k, .5, .8);
+    g.restore();
+    g.font = `italic 400 ${22 * k}px ${serif}`; g.fillStyle = 'rgba(176,57,31,.85)'; g.textAlign = 'center';
+    g.fillText(i === 0 ? 'Frontispício' : 'Prancha ' + ROMAN[i], HW + HW / 2, TH - 92 * k);
+    // grão do papel por cima de tudo
+    g.globalCompositeOperation = 'multiply'; g.globalAlpha = .5;
+    g.fillStyle = g.createPattern(GR, 'repeat'); g.fillRect(0, 0, TW, TH);
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     return tex(c);
   });
 
@@ -319,26 +364,123 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
     leaves.push(mesh);
   }
 
-  // ---------- figuras que se levantam ----------
+  // ---------- teatro de papel: cada página da direita levanta um cenário em camadas ----------
+  // fundo (a pintura num cartão de borda rasgada), dois morros de papel com as cores da pintura e um arco de proscênio
+  const cv = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  function deckle(g, x, y, w, h, j) {
+    g.beginPath();
+    for (let i = 0; i <= w; i += 5) g.lineTo(x + i, y + (Math.random() - .5) * j);
+    for (let i = 0; i <= h; i += 5) g.lineTo(x + w + (Math.random() - .5) * j, y + i);
+    for (let i = w; i >= 0; i -= 5) g.lineTo(x + i, y + h + (Math.random() - .5) * j);
+    for (let i = h; i >= 0; i -= 5) g.lineTo(x + (Math.random() - .5) * j, y + i);
+    g.closePath();
+  }
+  function tooth(g, w, h, a = .1) { g.save(); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = a; g.fillStyle = g.createPattern(GR, 'repeat'); g.fillRect(0, 0, w, h); g.restore(); }
+  function palette(img) {
+    const c = cv(4, 4), g = c.getContext('2d'); g.drawImage(img, 0, 0, 4, 4);
+    const d = g.getImageData(0, 0, 4, 4).data;
+    const row = y => [0, 1, 2, 3].map(x => [d[(y * 4 + x) * 4], d[(y * 4 + x) * 4 + 1], d[(y * 4 + x) * 4 + 2]]).reduce((a, b) => a.map((v, n) => v + b[n] / 4), [0, 0, 0]);
+    return { top: row(0), mid: row(2), low: row(3) };
+  }
+  const rgb = (c, m = 1, add = 0) => `rgb(${c.map(v => Math.round(clamp(v * m + add, 0, 255))).join(',')})`;
+  const LW = low ? 640 : 1024;
+  const SW = W * .92;                       // largura do cenário
+  function backdrop(img) {
+    const h = Math.round(LW * .56 / SW), c = cv(LW, h), g = c.getContext('2d');
+    deckle(g, 6, 6, LW - 12, h - 12, 6); g.fillStyle = '#f3efe6'; g.fill();
+    g.save(); deckle(g, 22, 22, LW - 44, h - 44, 3); g.clip(); cover(g, img, 22, 22, LW - 44, h - 44, .5, .35); g.restore();
+    tooth(g, LW, h, .14);
+    return { c, w: SW * .9, h: .56 };
+  }
+  function hill(img, pal, hh, m, seed) {
+    const h = Math.round(LW * hh / SW), c = cv(LW, h), g = c.getContext('2d');
+    const pts = [];
+    for (let x = 0; x <= LW; x += 3) {
+      const t = x / LW;
+      const y = h * (.32 + .2 * Math.sin(t * (3 + seed) + seed * 5) + .12 * Math.sin(t * (9 + seed * 2) + seed) + .05 * Math.sin(t * 31 + seed * 3)) + (Math.random() - .5) * 2.4;
+      pts.push([x, Math.max(8, y)]);
+    }
+    const path = () => { g.beginPath(); g.moveTo(0, h); pts.forEach(([x, y]) => g.lineTo(x, y)); g.lineTo(LW, h); g.closePath(); };
+    // borda branca do rasgo, depois o papel colorido
+    path(); g.lineWidth = 9; g.strokeStyle = '#f4f0e7'; g.lineJoin = 'round'; g.stroke();
+    path(); g.fillStyle = rgb(seed < .5 ? pal.mid : pal.low, m, 34); g.fill();
+    g.save(); path(); g.clip();
+    g.globalAlpha = .3; g.globalCompositeOperation = 'soft-light'; cover(g, img, 0, 0, LW, h, .5, 1); g.restore();
+    // luz na crista
+    g.save(); path(); g.clip(); const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,248,230,.28)'); gr.addColorStop(.5, 'rgba(255,248,230,0)'); g.fillStyle = gr; g.fillRect(0, 0, LW, h); g.restore();
+    tooth(g, LW, h, .16);
+    return { c, w: SW * (.86 + seed * .03), h: hh };
+  }
+  function arch(i, pg) {
+    const hh = .7, h = Math.round(LW * hh / SW), c = cv(LW, h), g = c.getContext('2d');
+    deckle(g, 4, 4, LW - 8, h - 8, 4);
+    const pgr = g.createLinearGradient(0, 0, 0, h); pgr.addColorStop(0, '#f5f1e8'); pgr.addColorStop(1, '#e9e3d6');
+    g.fillStyle = pgr; g.fill();
+    // a janela do palco: arco abatido
+    const x0 = LW * .06, x1 = LW * .94, y0 = h * .1, y1 = h * .87, rr = (x1 - x0) / 2;
+    const win = () => { g.beginPath(); g.moveTo(x0, y1); g.lineTo(x0, y0 + rr * .32); g.quadraticCurveTo(x0, y0, (x0 + x1) / 2, y0); g.quadraticCurveTo(x1, y0, x1, y0 + rr * .32); g.lineTo(x1, y1); g.closePath(); };
+    g.save(); g.globalCompositeOperation = 'destination-out'; win(); g.fill(); g.restore();
+    g.lineWidth = 3; g.strokeStyle = '#b0391f'; win(); g.stroke();
+    g.save(); g.translate(LW / 2, (y0 + y1) / 2); g.scale(1.035, 1.06); g.translate(-LW / 2, -(y0 + y1) / 2); g.lineWidth = 1.2; g.strokeStyle = 'rgba(31,35,42,.6)'; win(); g.stroke(); g.restore();
+    // cortina presa nos lados
+    for (const sx of [x0, x1]) {
+      g.fillStyle = 'rgba(122,44,29,.9)'; g.beginPath(); const dir = sx === x0 ? 1 : -1;
+      g.moveTo(sx, y0 + rr * .12); g.quadraticCurveTo(sx + dir * LW * .05, h * .42, sx + dir * LW * .012, y1 * .96); g.lineTo(sx, y1); g.closePath(); g.fill();
+    }
+    g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    g.fillStyle = '#b0391f'; g.font = `italic 400 ${Math.round(h * .07)}px ${serif}`;
+    const num = (pg.num || '').split('—');
+    g.fillText(i === 0 ? 'Quanto mais segura' : (num[1] || '').trim(), LW / 2, h * .965);
+    g.fillStyle = 'rgba(31,35,42,.7)'; g.font = `600 ${Math.round(h * .03)}px ${sans}`;
+    if ('letterSpacing' in g) g.letterSpacing = `${Math.round(h * .014)}px`;
+    g.fillText(i === 0 ? 'MONTAIGNE' : ('CAPÍTULO ' + (num[0] || '').trim()), LW / 2, h * .075);
+    if ('letterSpacing' in g) g.letterSpacing = '0px';
+    tooth(g, LW, h, .12);
+    return { c, w: SW, h: hh };
+  }
+
+  const shGeo = (w, h) => new THREE.PlaneGeometry(w * 1.04, h * .62).rotateX(-PI / 2).translate(.03, 0, -h * .31);
   const figs = scenes.map((s, i) => {
-    const c = s.cuts[0]; if (!c) return null;
-    const img = imgs['cut/' + c.k + '.webp'];
-    const t = new THREE.Texture(img); t.colorSpace = THREE.SRGBColorSpace; t.needsUpdate = true; t.anisotropy = Math.min(4, maxA);
-    const fh = D * .54 * clamp(c.h / 12, .7, 1.05), fw = fh * img.width / img.height;
-    const pivot = new THREE.Group();
-    const half = Math.min(W * .92, Math.max(W * .3, Math.abs(c.x) / 12.5 * W * 1.05));
-    pivot.position.set(Math.sign(c.x || 1) * Math.min(half, W - fw / 2 - .05), 0, -D * .06);
-    const mat = new THREE.ShaderMaterial({
-      vertexShader: FIG_VS, fragmentShader: FIG_FS, side: THREE.DoubleSide, transparent: true,
-      uniforms: { ...fogU, uMap: { value: t }, uPx: { value: new THREE.Vector2(1 / img.width, 1 / img.height) }, uPaper: { value: PAPER }, uO: { value: 1 } },
+    const img = imgs['paint/' + s.bg + '.jpg'], pal = palette(img), pg = pages[i] || {};
+    const defs = [
+      { ...backdrop(img), z: -.3 },
+      { ...hill(img, pal, .2, 1.05, .3), z: -.17 },
+      { ...hill(img, pal, .14, .8, .9), z: -.05 },
+      { ...arch(i, pg), z: .14 },
+    ];
+    const layers = defs.map((d, j) => {
+      const t = tex(d.c); t.anisotropy = Math.min(4, maxA);
+      const pivot = new THREE.Group(); pivot.position.set(W / 2, 0, d.z);
+      const mat = new THREE.ShaderMaterial({ vertexShader: FIG_VS, fragmentShader: FIG_FS, side: THREE.DoubleSide, transparent: true, uniforms: { ...fogU, uMap: { value: t }, uPaper: { value: PAPER }, uO: { value: 1 } } });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(d.w, d.h).translate(0, d.h / 2, 0), mat);
+      pivot.add(mesh);
+      const shm = new THREE.ShaderMaterial({ vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`, fragmentShader: SH_FS, transparent: true, depthWrite: false, uniforms: { uMap: { value: t }, uO: { value: 0 } } });
+      const sh = new THREE.Mesh(shGeo(d.w, d.h), shm);
+      book.add(pivot, sh);
+      return { pivot, sh, shm, mat, j };
     });
-    const fig = new THREE.Mesh(new THREE.PlaneGeometry(fw, fh).translate(0, fh / 2, 0), mat);
-    pivot.add(fig);
-    const shm = new THREE.ShaderMaterial({ vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`, fragmentShader: SH_FS, transparent: true, depthWrite: false, uniforms: { uMap: { value: t }, uO: { value: 0 } } });
-    const sh = new THREE.Mesh(new THREE.PlaneGeometry(fw * 1.08, fh * .7).rotateX(-PI / 2).translate(.05, 0, -fh * .35), shm);
-    book.add(pivot, sh);
-    return { pivot, fig, sh, shm, mat, fh, fw };
+    const group = { layers };
+    return group;
   });
+
+  // ---------- fita marcadora: sai da lombada, cai pela borda de trás e repousa na mesa ----------
+  const RS = 40;
+  const ribGeo = new THREE.PlaneGeometry(1, 1, 1, RS);
+  const ribbon = new THREE.Mesh(ribGeo, new THREE.MeshLambertMaterial({ color: 0x9a2f1c, side: THREE.DoubleSide }));
+  ribbon.frustumCulled = false; book.add(ribbon);
+  function ribbonPath(top, t, out) {
+    const pa = ribGeo.attributes.position;
+    for (let i = 0; i <= RS; i++) {
+      const u = i / RS;
+      let x = .012 + Math.sin(u * 5 + t * .9) * .012 * u, y, z;
+      if (u < .4) { z = mix(-.05, -D / 2 - .01, u / .4); y = top + .002; }
+      else if (u < .62) { const a = (u - .4) / .22; z = -D / 2 - .01 - Math.sin(a * PI / 2) * .1; y = top * Math.cos(a * PI / 2) + .002; }
+      else { const a = (u - .62) / .38; z = -D / 2 - .11 - a * .32; y = .002; x += Math.sin(a * 4 + t * 1.3) * .03 * a; }
+      z -= out * u * u * .2; y += out * u * u * .25 * Math.sin(u * 6 + t * 4);
+      for (let k = 0; k < 2; k++) { const idx = i * 2 + k; pa.setXYZ(idx, x + (k ? .013 : -.013), y, z); }
+    }
+    pa.needsUpdate = true; ribGeo.computeVertexNormals();
+  }
 
   // ---------- papéis soltos no vento ----------
   const NS = low ? 26 : 54;
@@ -365,12 +507,12 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
   // O livro vai sempre para o lado oposto ao texto; o deslocamento é de lente (setViewOffset),
   // então o livro nunca é cortado nem invade a coluna do texto.
   const SIDE = {
-    hero: { sx: .2, sy: .17, size: .46, el: .68 },
-    l: { sx: .24, sy: .03, size: .42, el: .62 },
-    r: { sx: -.24, sy: .03, size: .42, el: .62 },
-    c: { sx: 0, sy: -.2, size: .44, el: .74 },
+    hero: { sx: .2, sy: .14, size: .52, el: .55 },
+    l: { sx: .25, sy: .02, size: .48, el: .5 },
+    r: { sx: -.25, sy: .02, size: .48, el: .5 },
+    c: { sx: 0, sy: -.2, size: .46, el: .6 },
   };
-  const MOB = { sx: 0, sy: .17, size: .97, el: .95 };
+  const MOB = { sx: 0, sy: .16, size: .97, el: .7 };
   const kinds = labels.map((_, i) => scenes[i].side || 'c');
   let W_ = 1, H_ = 1, asp = 1;
   const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
@@ -424,30 +566,39 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
     leaves.forEach((m, k) => { m.material.uniforms.uFly.value = still && st.fin === 0 ? 0 : easeIO(clamp(st.fin * 1.9 - (N - 1 - k) * .13)); });
     tableU.uLift.value = st.fin;
 
-    // figuras: sobem quando a página termina de abrir, deitam antes de a folha passar
+    // teatro de papel: as camadas sobem uma depois da outra (do fundo para a frente) quando a página
+    // termina de abrir, com mola; deitam todas antes de a folha virar
     figs.forEach((f, s) => {
-      if (!f) return;
       const prev = s === 0 ? cov : ang[s - 1];
       const next = s < LAST ? ang[s] : 0;
-      const up = clamp((prev - PI * .72) / (PI * .28));
-      const down = 1 - clamp(next / (PI * .3));
-      let r = Math.min(easeBack(up), easeOut(down));
-      if (s === LAST) r = Math.min(easeBack(up), 1);
+      const up = clamp((prev - PI * .7) / (PI * .3));
+      const down = s < LAST ? 1 - clamp(next / (PI * .26)) : 1;
       const y = Math.max(s === 0 ? H + .001 : topL, topR) + N * E + E * 3;
-      f.pivot.position.y = y;
-      const wob = Math.sin(st.t * 1.7 + s) * .012 * r;
-      f.pivot.rotation.x = -(PI / 2 - .015) * (1 - r) + wob;
-      f.pivot.visible = r > .002 && (prev > PI * .5);
-      f.sh.visible = f.pivot.visible;
-      f.sh.position.set(f.pivot.position.x, y + .0006, f.pivot.position.z);
-      f.sh.scale.z = Math.max(.01, Math.sin(clamp(r) * PI / 2));
-      f.shm.uniforms.uO.value = .5 * clamp(r) * (1 - st.fin);
-      if (s === LAST && st.fin > 0) {
-        const fl = easeIO(clamp(st.fin * 1.6));
-        f.pivot.position.y += fl * 2.6; f.pivot.position.x += fl * 1.2; f.pivot.rotation.z = -fl * .9; f.pivot.rotation.y = fl * 1.4;
-        f.mat.uniforms.uO.value = 1 - clamp(st.fin * 1.4 - .4);
-      }
+      const fl = s === LAST ? easeIO(clamp(st.fin * 1.5)) : 0;
+      f.layers.forEach(L => {
+        const uj = clamp((up - L.j * .13) / .61);
+        const dj = clamp((down - (3 - L.j) * .06) / .82);
+        const r = Math.min(easeBack(uj), easeOut(dj));
+        const vis = r > .002 && prev > PI * .5;
+        L.pivot.visible = L.sh.visible = vis;
+        if (!vis) return;
+        L.pivot.position.y = y + L.j * .0004;
+        L.pivot.rotation.set(-(PI / 2 - .012) * (1 - r) + Math.sin(st.t * 1.3 + L.j + s) * .008 * r, 0, 0);
+        L.sh.position.set(L.pivot.position.x, y + .0006 + L.j * .0002, L.pivot.position.z);
+        L.sh.scale.z = Math.max(.01, Math.sin(clamp(r) * PI / 2));
+        L.shm.uniforms.uO.value = .42 * clamp(r) * (1 - st.fin);
+        if (fl > 0) {
+          // no fim o vento leva o cenário também, camada por camada
+          const fj = clamp(fl * 1.4 - (3 - L.j) * .12);
+          L.pivot.position.x += fj * (1.6 + L.j * .5); L.pivot.position.y += fj * (2.2 + L.j * .3);
+          L.pivot.rotation.z = -fj * (.8 + L.j * .3); L.pivot.rotation.y = fj * 1.2;
+          L.mat.uniforms.uO.value = 1 - clamp(fj * 1.3 - .3);
+        }
+      });
     });
+
+    ribbon.visible = cov > PI * .6;
+    if (ribbon.visible) ribbonPath(Math.max(topL, topR) + N * E, st.t, st.gust);
 
     // vento: papéis soltos levantam quando uma folha vira ou a rolagem dá um puxão
     st.kick *= Math.pow(.25, dt);

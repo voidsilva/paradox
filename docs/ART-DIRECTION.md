@@ -30,7 +30,8 @@
 - Identidade oposta à do Idiota: dia em vez de noite, névoa (`#e2dfd6`) em vez de fumaça, papel de livro (`#efebe2`), tinta (`#1a1e25`) e rubrica vermelha (`#b0391f`) em vez de ouro.
 - Letra: EB Garamond, a letra de Claude Garamond, Paris, da geração de Montaigne. Títulos em serifa leve com itálico vermelho, capitular no começo de cada parágrafo, rótulos em Instrument Sans espaçada. Cantos retos, filetes, pontilhado de índice.
 - Mecânica: um livro pop-up de capa dura vermelha sobre uma mesa na névoa (os Ensaios). Na entrada a capa abre. Cada cena é uma página dupla com a pintura impressa como prancha, títulos correntes, legenda em vermelho e número de página.
-- A figura recortada (com borda branca de papel) se levanta da página com mola quando a página termina de abrir e deita antes de a folha virar.
+- Página da esquerda: o ensaio composto (capítulo, título, capitular vermelha). Página da direita: um teatro de papel que se levanta em camadas, do fundo para a frente, com mola: a pintura num cartão de borda rasgada, dois morros de papel com as cores da pintura e um arco de proscênio com cortina. Cada camada faz sombra na página.
+- Luz: o sol da tarde entra pela janela da torre e desenha os caixilhos e a sombra de folhas balançando sobre a mesa e o livro. Uma fita marcadora vermelha sai da lombada e cai na mesa.
 - Passagem entre cenas: a folha vira com curvatura real (shader de vértice; o canto da frente vai antes) e o deslocamento de ar levanta papéis manuscritos soltos.
 - Texto: as letras chegam como tinta que assenta e saem uma por uma levadas pelo vento, girando como papel.
 - Final: o vento arranca as folhas uma depois da outra e a névoa vira papel branco, que é o fundo da página.
@@ -39,4 +40,5 @@
 ## As portas (lobby)
 - Um triângulo de Penrose: três vigas, cada uma uma galeria com a identidade de um paradoxo (nogueira e ouro; pedra clara e molduras finas; linho cru com esboços para o próximo).
 - Câmera ortográfica na direção (1,1,1). Só desse ângulo a terceira viga encosta na primeira; ela é desenhada antes e o resto por cima. Arrastar abre o objeto e mostra o truque; ao soltar, ele volta sozinho e fecha.
+- Uma lanterna quente segue o cursor, passa rasante pelas galerias e acende a poeira no ar.
 - Cada porta está numa gravidade (em pé, de lado). Brasas sobem da porta do Idiota; papéis voam da porta do Montaigne. O céu é metade brasa, metade névoa.
