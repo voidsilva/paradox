@@ -15,7 +15,7 @@ const L = 14, T = 2.6;
 const PORTALS = [
   { id: 'idiota', paint: 'img/paint/p15-rua.jpg', cut: 'img/cut/p01-retrato.webp', figH: .84, fade: .18, tone: 0xffa04a, fx: 'ember',
     at: [L * .5, T / 2, 0], up: [0, 1, 0], fwd: [.45, 0, 1] },
-  { id: 'montaigne', paint: 'montaigne/img/paint/m15-praia.jpg', cut: 'montaigne/img/cut/m09-horizonte.webp', figH: .8, fade: .02, figX: .12, tone: 0xcfe0ff, fx: 'wind', ped: 0xbdb7aa,
+  { id: 'montaigne', paint: 'montaigne/img/paint/m15-praia.jpg', cut: 'montaigne/img/cut/m09-horizonte.webp', figH: .8, fade: .02, figX: .12, tone: 0xcfe0ff, fx: 'wind', ped: 0xbdb7aa, door: 0xd9d3c6,
     at: [L + T / 2, L * .48, 0], up: [1, 0, 0], fwd: [0, .45, 1] },
   { id: 'soon', locked: true, tone: 0x999999, ped: 0x8d826f,
     at: [L, L + T / 2, L * .55], up: [0, 1, 0], fwd: [1, 0, .45] },

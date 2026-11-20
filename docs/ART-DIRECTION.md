@@ -40,5 +40,6 @@
 ## As portas (lobby)
 - Um triângulo de Penrose: três vigas, cada uma uma galeria com a identidade de um paradoxo (nogueira e ouro; pedra clara e molduras finas; linho cru com esboços para o próximo).
 - Câmera ortográfica na direção (1,1,1). Só desse ângulo a terceira viga encosta na primeira; ela é desenhada antes e o resto por cima. Arrastar abre o objeto e mostra o truque; ao soltar, ele volta sozinho e fecha.
+- Cada porta tem duas folhas entreabertas; com o cursor elas se escancaram (a trancada só treme).
 - Uma lanterna quente segue o cursor, passa rasante pelas galerias e acende a poeira no ar.
 - Cada porta está numa gravidade (em pé, de lado). Brasas sobem da porta do Idiota; papéis voam da porta do Montaigne. O céu é metade brasa, metade névoa.

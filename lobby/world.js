@@ -253,6 +253,20 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
       fig.position.set((cfg.figX || 0) * iw, -ih / 2 + fh / 2, .12);
       inner.add(fig);
     }
+    // portas de verdade: duas folhas entreabertas na frente da pintura; com o cursor elas se abrem
+    // e a luz do outro lado sai. A porta trancada só treme.
+    const doorCol = cfg.door ?? (cfg.locked ? 0x5d554b : 0x2b1c13);
+    const dm = new THREE.MeshStandardMaterial({ color: doorCol, roughness: .55, metalness: .1 });
+    const doors = [-1, 1].map(sd => {
+      const piv = new THREE.Group(); piv.position.set(sd * iw / 2, 0, FD / 2 - .1);
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(iw / 2 - .02, ih - .02, .08).translate(-sd * (iw / 4), 0, 0), dm);
+      piv.add(leaf);
+      // puxador dourado
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 8), gold); knob.position.set(-sd * (iw / 2 - .16), 0, .08);
+      piv.add(knob);
+      inner.add(piv);
+      return piv;
+    });
     // luz da porta e poça de luz no chão
     const pl = new THREE.PointLight(tone, 0, 9, 1.6); pl.position.set(0, FH / 2, 1.6); g.add(pl);
     const pool = new THREE.Mesh(new THREE.PlaneGeometry(5.5, 5.5), new THREE.ShaderMaterial({
@@ -279,7 +293,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     g.traverse(o => { if (o.isMesh && o !== hit && o !== pool && o.material.transparent !== true) { o.castShadow = true; o.receiveShadow = true; } });
     if (cfg.behind) g.traverse(o => o.layers.set(BEHIND));
     hit.userData.portal = cfg.id;
-    const p = { cfg, g, inner, paint, fig, pl, pool, hit, fx, hov: 0, center: new THREE.Vector3() };
+    const p = { cfg, g, inner, paint, fig, pl, pool, hit, fx, doors, open: 0, hov: 0, center: new THREE.Vector3() };
     P.push(p);
     return p;
   }
@@ -511,6 +525,11 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
       p.paint.material.color.setScalar(p.cfg.locked ? .62 : b);
       if (p.fig) { p.fig.material.uniforms.uB.value = b; p.fig.position.z = .12 + p.hov * .5; }
       p.inner.scale.setScalar(1 + p.hov * .05);
+      // folhas: entreabertas em repouso, escancaradas com o cursor ou ao entrar
+      const want = p.cfg.locked ? 0 : entering && entering.p === p ? 2.2 : 1.05 + p.hov * 1.0;
+      p.open += (want - p.open) * (1 - Math.pow(.02, dt));
+      const shake = p.cfg.locked ? Math.sin(t * 40) * .04 * (hover === p ? 1 : 0) : Math.sin(t * 1.3 + p.cfg.at[0]) * .03;
+      p.doors[0].rotation.y = -(p.open + shake); p.doors[1].rotation.y = p.open + shake;
       if (p.fx) { p.fx.mat.uniforms.uT.value = t; p.fx.mat.uniforms.uA.value = .35 + p.hov * .8; p.fx.mat.uniforms.uZ.value = cam.zoom; }
       p.hit.getWorldPosition(p.center);
     }
@@ -560,7 +579,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     screen, enter: id => { const p = P.find(q => q.cfg.id === id); return p ? enter(p) : null; },
     get closed() { return closed; }, get entering() { return !!entering; },
     set(o) { if (o.yaw != null) cam.yaw = o.yaw; if (o.pitch != null) cam.pitch = o.pitch; if (o.spin != null) spin = o.spin; if (o.hover !== undefined) setHover(P.find(q => q.cfg.id === o.hover) || null); if (o.enter != null) { const p = P.find(q => q.cfg.id === o.enter); if (p) { enter(p); entering.t0 = performance.now() - o.t * 1300; } } },
-    settle() { lastMove = performance.now(); for (const p of P) p.hov = hover === p ? 1 : 0; loopU.uA.value = .9; frame(.016); frame(.016); },
+    settle() { lastMove = performance.now(); for (const p of P) { p.hov = hover === p ? 1 : 0; p.open = p.cfg.locked ? 0 : 1.05 + p.hov * 1.0; } loopU.uA.value = .9; frame(.016); frame(.016); },
     pause: stop, resume: start,
     begin() { if (!intro0) intro0 = performance.now() + 350; },
   };
