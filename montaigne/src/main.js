@@ -119,13 +119,14 @@ function reveal() {
   loader.classList.add('out');
   setTimeout(() => loader.remove(), 1700);
   if (introP < 1) {
-    const t0 = performance.now() + 300, D = 2800;
+    const t0 = performance.now() + 900, D = 3600;
     if (world) world.set({ intro: 0 });
     const step = now => {
       introP = clamp((now - t0) / D);
-      if (world) world.set({ intro: easeOut(introP) });
+      if (world) world.set({ intro: introP });
       updateWorld();
-      if (introP < 1) requestAnimationFrame(step); else if (lenis) lenis.start();
+      if (introP < 1) requestAnimationFrame(step);
+      if (introP > .55 && lenis && !lenis.__on) { lenis.__on = true; lenis.start(); }
     };
     requestAnimationFrame(step);
   } else if (lenis) lenis.start();

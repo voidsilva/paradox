@@ -192,3 +192,8 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
 .m .st .ch { transform-origin: 50% 60%; }
 @media (min-width: 861px) { .m .st--c { top: 24%; transform: translate(-50%, -30%); } }
 .m .stage::before { background: radial-gradient(60% 55% at 16% 84%, rgba(226, 223, 214, .7), transparent 65%); }
+/* Segure: legendas sempre fora da pintura, à esquerda; a pintura fica à direita */
+.hold .cap--c { top: auto; bottom: 12vh; left: var(--gut); transform: none; text-align: left; max-width: min(520px, 40vw); }
+.hold .cap { max-width: min(520px, 40vw); }
+.hold .cap h3 { text-shadow: 0 0 30px rgba(244, 241, 234, .95), 0 0 6px rgba(244, 241, 234, .9); }
+@media (max-width: 860px) { .hold .cap, .hold .cap--c { max-width: none; right: var(--gut); bottom: 17vh; } }

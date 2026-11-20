@@ -56,11 +56,10 @@ const frag = /* glsl */`
     vec3 a = texture2D(tA, uCropA.xy + vUv * uCropA.zw).rgb;
     vec3 b = texture2D(tB, uCropB.xy + vUv * uCropB.zw).rgb;
     // troca: a pintura presa se solta da esquerda para a direita em lascas
-    float m = noise(vUv * vec2(18., 11.) + uSeed * 7.) * .35 + (1. - vUv.x) * .65;
+    float m = noise(vUv * vec2(5., 3.2) + uSeed * 7.) * .3 + noise(vUv * vec2(22., 14.)) * .08 + (1. - vUv.x) * .62;
     float th = 1.05 - uMix * 1.4;
-    float k = smoothstep(th - .02, th + .02, m);
+    float k = smoothstep(th - .1, th + .1, m);
     vec3 col = mix(a, b, k);
-    col += vec3(1., .92, .78) * smoothstep(th - .035, th, m) * (1. - smoothstep(th, th + .02, m)) * 1.2 * step(.001, uMix) * step(uMix, .999);
     float g = max(uGrip, 0.);
     // segurar tira a cor: o mundo fica cinza quando a gente aperta
     float l = dot(col, vec3(.299, .587, .114));
@@ -205,10 +204,10 @@ export async function createHold({ canvas, tier = 'high', still = false, asset =
     shadow.material.uniforms.uS.value = 1 - gp * .45;
     shadow.material.uniforms.uA.value = .55 - gp * .2;
     sheet.rotation.set(-state.my * .08 + gp * .25, state.mx * .12 + Math.sin(time * .3) * .03, gp * .12 + Math.sin(time * 9) * gp * gp * .012);
-    sheet.position.set(mobile ? 0 : 1.6, mobile ? .8 : 0, 0);
+    sheet.position.set(mobile ? 0 : 2.7, mobile ? .9 : .3, 0);
     shadow.position.x = sheet.position.x + .5;
-    camera.position.set(state.mx * .6, state.my * .4, (mobile ? 26 : 17) - gp * 2);
-    camera.lookAt(mobile ? 0 : 1, mobile ? .6 : 0, 0);
+    camera.position.set(state.mx * .6, state.my * .4, (mobile ? 27 : 20.5) - gp * 2);
+    camera.lookAt(mobile ? 0 : .6, mobile ? .6 : 0, 0);
     renderer.render(scene, camera);
   }
 

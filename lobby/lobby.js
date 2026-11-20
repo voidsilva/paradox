@@ -57,6 +57,7 @@ async function init() {
     body.classList.add('flat');
   }
   body.classList.remove('is-loading'); if (STILL || !lobby) body.classList.remove('intro');
+  if (lobby && lobby.begin) lobby.begin();
   if (!lobby) return;
   // etiquetas presas às portas
   const place = () => {

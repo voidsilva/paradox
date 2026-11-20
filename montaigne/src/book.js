@@ -360,29 +360,27 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
   table.position.y = -.001; scene.add(table);
 
   // ---------- câmera por cena ----------
-  // tx/tz: para onde a câmera olha (o livro vai para o lado oposto ao texto); d: distância relativa; el: elevação
-  const SIDE = { hero: [-.72, .34, 1, .66], l: [-1.06, .04, 1.16, .62], r: [1.06, .04, 1.16, .62], c: [0, -.42, 1.05, .7] };
+  // enquadramento em fração da tela: sx/sy = onde fica o centro do livro (+ direita, + para cima),
+  // size = quanto da largura da tela o livro aberto ocupa, el = elevação da câmera.
+  // O livro vai sempre para o lado oposto ao texto; o deslocamento é de lente (setViewOffset),
+  // então o livro nunca é cortado nem invade a coluna do texto.
+  const SIDE = {
+    hero: { sx: .2, sy: .17, size: .46, el: .68 },
+    l: { sx: .24, sy: .03, size: .42, el: .62 },
+    r: { sx: -.24, sy: .03, size: .42, el: .62 },
+    c: { sx: 0, sy: -.2, size: .44, el: .74 },
+  };
+  const MOB = { sx: 0, sy: .17, size: .97, el: .95 };
   const kinds = labels.map((_, i) => scenes[i].side || 'c');
   let W_ = 1, H_ = 1, asp = 1;
   const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
   const st = { u: 0, intro: still ? 1 : 0, prog: 0, gust: 0, kick: 0, fin: 0, t: 0, transit: 0 };
-
-  function key(i) {
-    const s = SIDE[kinds[Math.max(0, Math.min(N - 1, i))]] || SIDE.c;
-    if (asp < 1) return [0, .7, .94, .9];
-    return s;
-  }
-  function baseDist() {
-    // a largura do livro aberto ocupa ~58% da tela (no celular, a tela inteira)
-    const hw = W + M + .12;
-    const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * asp;
-    return asp < 1 ? hw / tanH * 1.12 : hw / tanH / .6;
-  }
+  const key = i => (asp < .9 ? MOB : SIDE[kinds[Math.max(0, Math.min(N - 1, i))]] || SIDE.c);
 
   function resize() {
     W_ = canvas.clientWidth || innerWidth; H_ = canvas.clientHeight || innerHeight;
     asp = W_ / H_;
-    camera.aspect = asp; camera.fov = asp < 1 ? 36 : 28; camera.updateProjectionMatrix();
+    camera.aspect = asp; camera.fov = asp < .9 ? 34 : 26; camera.updateProjectionMatrix();
     renderer.setSize(W_, H_, false);
   }
   resize();
@@ -472,20 +470,25 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
     // câmera
     const i0 = Math.floor(clamp(u, 0, LAST)), i1 = Math.min(LAST, i0 + 1), fr = easeIO(clamp(u - i0));
     const a = key(i0), b = key(i1);
-    let tx = mix(a[0], b[0], fr), tz = mix(a[1], b[1], fr), dd = mix(a[2], b[2], fr), el = mix(a[3], b[3], fr);
-    // a câmera chega um pouco mais perto enquanto a folha passa
-    dd *= 1 - turning * .05;
-    // entrada: de cima, sobre o livro fechado
-    tx = mix(asp < 1 ? W / 2 : W / 2 - .2, tx, intro); tz = mix(asp < 1 ? .2 : .25, tz, intro);
-    dd = mix(asp < 1 ? .62 : .66, dd, intro); el = mix(1.25, el, intro);
+    let sx = mix(a.sx, b.sx, fr), sy = mix(a.sy, b.sy, fr), size = mix(a.size, b.size, fr), el = mix(a.el, b.el, fr);
+    // a folha que passa chega um pouco mais perto
+    size *= 1 + turning * .04;
+    // entrada: de cima, sobre o livro fechado, que depois abre
+    const cx = mix((W + M) / 2, 0, open);           // o centro do que está sobre a mesa
+    const half = mix((W + M) / 2, W + M, open) + .06;
+    size = mix(asp < .9 ? .62 : .3, size, intro) * (half / (W + M + .06));
+    el = mix(1.2, el, intro);
     // final: sobe e se afasta, o branco toma tudo
     const fin = easeIO(st.fin);
-    el += fin * .35; dd *= 1 + fin * .5;
-    const dist = baseDist() * dd;
-    tgt.set(tx + pointer.sx * .08, 0, tz - pointer.sy * .05);
-    const yaw = pointer.sx * .07, pitch = el + pointer.sy * .04;
+    el += fin * .3; size *= 1 - fin * .3;
+    const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * asp;
+    let dist = half / (tanH * Math.max(.05, size));
+    // no celular, o livro também precisa caber na altura de cima
+    tgt.set(cx + pointer.sx * .05, 0, -pointer.sy * .04);
+    const yaw = pointer.sx * .06, pitch = el + pointer.sy * .035;
     cpos.set(tgt.x + Math.sin(yaw) * Math.cos(pitch) * dist, Math.sin(pitch) * dist, tgt.z + Math.cos(yaw) * Math.cos(pitch) * dist);
     camera.position.copy(cpos); camera.lookAt(tgt);
+    camera.setViewOffset(W_, H_, -sx * W_, sy * H_, W_, H_);
 
     // névoa: depende da distância; no final engole tudo
     const fn = dist * mix(1.15, .2, fin), ff = dist * mix(2.6, .75, fin);

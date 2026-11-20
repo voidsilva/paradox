@@ -34,6 +34,9 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     let a = [1e9, -1e9, 1e9, -1e9]; const v = new THREE.Vector3();
     for (const [x, y, z] of [[0, 0, 0], [L, 0, 0], [L, L, 0]]) for (let i = 0; i < 8; i++) { v.set(x + (i & 1 ? 1 : -1) * T / 2, y + (i & 2 ? 1 : -1) * T / 2, z + (i & 4 ? 1 : -1) * T / 2); const r = v.dot(R), u = v.dot(U); a = [Math.min(a[0], r), Math.max(a[1], r), Math.min(a[2], u), Math.max(a[3], u)]; }
     root.position.copy(R.multiplyScalar(-(a[0] + a[1]) / 2)).addScaledVector(U, -(a[2] + a[3]) / 2);
+    // em profundidade (ao longo da visão) o deslocamento não muda a imagem fechada, mas faz o giro ser em volta do meio do objeto
+    const c = new THREE.Vector3(5 * L / 6, L / 2, L / 6);
+    root.position.addScaledVector(D, -c.dot(D));
   }
 
   // ---------- luz ----------
@@ -306,10 +309,11 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     const delay = i < 3 ? i * .18 : i < 6 ? .55 + (i - 3) * .12 : 1.5 + (i - 6) * .15;
     return { o, home, dir, spinQ, delay, dur: i < 6 ? 1.6 : 1.1 };
   });
-  let introT = still ? 99 : 0, introDone = still, flash = 0;
+  let introT = still ? 99 : 0, introDone = still, flash = 0, intro0 = 0;
   const tq = new THREE.Quaternion();
-  function intro(dt) {
-    introT += dt;
+  function intro() {
+    // só começa quando a página aparece (begin), senão a montagem acontece escondida atrás do carregamento
+    introT = intro0 ? Math.max(0, (performance.now() - intro0) / 1000) : 0;
     let done = true;
     for (const k of pieces) {
       const e = clamp((introT - k.delay) / k.dur);
@@ -322,7 +326,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     }
     if (done) { introDone = true; flash = 1; onIntro(); }
   }
-  if (!still) intro(0);
+  if (!still) intro();
   scene.traverse(o => { if (o.isLight) o.layers.enableAll(); });
 
   // ---------- câmera ----------
@@ -336,6 +340,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     base = asp < 1 ? r * .8 / asp : r * .7;
     applyCam();
   }
+  const cMid = new THREE.Vector3(5 * L / 6, L / 2, L / 6);
   const cam = { yaw: 0, pitch: 0, vy: 0, vp: 0, zoom: 1, target: new THREE.Vector3(), look: null, k: 0 };
   const tmpQ = new THREE.Quaternion();
   function camDir() {
@@ -370,8 +375,15 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     const h = ray.intersectObjects(hits, false)[0];
     return h ? P.find(p => p.hit === h.object) : null;
   }
+  const raw = { y: 0, p: 0 }, vel = { y: 0, p: 0 };
+  const band = (v, m) => m * Math.tanh(v / m);
   canvas.addEventListener('pointerdown', e => {
+    if (!introDone || entering) return;
+    // continua de onde o objeto está (se ainda estava voltando)
+    raw.y = Math.atanh(clamp(cam.yaw / .62, -.999, .999)) * .62; raw.p = Math.atanh(clamp(cam.pitch / .36, -.999, .999)) * .36;
+    vel.y = vel.p = 0;
     drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now(), moved: 0 };
+    canvas.style.cursor = "grabbing";
     try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* segue */ }
   });
   canvas.addEventListener('pointermove', e => {
@@ -379,8 +391,9 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     if (drag) {
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
-      cam.vy = -dx * .0055; cam.vp = dy * .0045;
-      cam.yaw = clamp(cam.yaw + cam.vy, -1.2, 1.2); cam.pitch = clamp(cam.pitch + cam.vp, -.55, .55);
+      raw.y -= dx * .0048; raw.p += dy * .0038;
+      cam.yaw = band(raw.y, .62); cam.pitch = band(raw.p, .36);
+      return;
     }
     const p = pick(e.clientX, e.clientY);
     setHover(p);
@@ -419,29 +432,41 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
   function frame(dt) {
     t += dt;
     // sem arrastar, o objeto volta sozinho ao único ângulo em que é impossível
-    if (!drag && !entering) {
-      const idle = performance.now() - lastMove;
-      const k = idle > 900 ? 1 - Math.pow(.02, dt) : 1 - Math.pow(.4, dt);
-      cam.yaw *= 1 - k; cam.pitch *= 1 - k;
-      if (Math.abs(cam.yaw) < .0025 && Math.abs(cam.pitch) < .0025) { cam.yaw = 0; cam.pitch = 0; }
+    if (!drag && !entering && (cam.yaw || cam.pitch)) {
+      // mola criticamente amortecida: volta firme e encaixa sem pular
+      const w = 5.5;
+      for (const [k, v] of [['yaw', 'y'], ['pitch', 'p']]) {
+        vel[v] += (-w * w * cam[k] - 2 * w * vel[v]) * dt;
+        cam[k] += vel[v] * dt;
+      }
+      if (Math.abs(cam.yaw) < .0015 && Math.abs(cam.pitch) < .0015 && Math.abs(vel.y) + Math.abs(vel.p) < .02) { cam.yaw = 0; cam.pitch = 0; vel.y = vel.p = 0; }
     }
     // gira devagar em torno do eixo de visão: continua fechado
     if (!entering) spin += dt * .035;
     pivot.quaternion.setFromAxisAngle(D, spin);
-    if (!introDone) intro(dt);
+    if (!introDone) intro();
     // o laço de luz corre sempre; quando o objeto fecha, ele acende
     flash = Math.max(0, flash - dt * .7);
     loopU.uPhase.value = t * .16;
     loopU.uA.value += (((closed ? .9 : .25) + flash * 2.5) * (introDone ? 1 : .2) - loopU.uA.value) * (1 - Math.pow(.02, dt));
     const isClosed = cam.yaw === 0 && cam.pitch === 0 && !entering && introDone;
     if (isClosed !== closed) { closed = isClosed; if (closed) { closeT = t; flash = Math.max(flash, .8); } onClose(closed); }
+    // aberto, o giro passa a ser em volta do meio real do objeto (sem empurrá-lo para fora da tela)
+    if (!entering) {
+      pivot.updateMatrixWorld(true);
+      const oa = Math.min(1, (Math.abs(cam.yaw) + Math.abs(cam.pitch)) / .3);
+      cam.target.copy(cMid).applyMatrix4(root.matrixWorld).multiplyScalar(oa * oa * (3 - 2 * oa));
+    }
+    // aberto, a câmera recua um pouco para o objeto inteiro caber na tela
+    if (!entering) cam.zoom = 1 / (1 + .5 * Math.min(1, (Math.abs(cam.yaw) + Math.abs(cam.pitch)) / .55));
     // entrada
     if (entering) {
+      if (entering.z0 == null) entering.z0 = cam.zoom;
       const e = clamp((performance.now() - entering.t0) / 1300);
       const s = ease(e);
       cam.k = s;
       cam.target.lerpVectors(entering.from, entering.to, s);
-      cam.zoom = 1 + s * s * 7.5;
+      cam.zoom = entering.z0 + s * s * 7.5;
     }
     applyCam();
     // portas
@@ -491,6 +516,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     set(o) { if (o.yaw != null) cam.yaw = o.yaw; if (o.pitch != null) cam.pitch = o.pitch; if (o.spin != null) spin = o.spin; if (o.hover !== undefined) setHover(P.find(q => q.cfg.id === o.hover) || null); if (o.enter != null) { const p = P.find(q => q.cfg.id === o.enter); if (p) { enter(p); entering.t0 = performance.now() - o.t * 1300; } } },
     settle() { lastMove = performance.now(); for (const p of P) p.hov = hover === p ? 1 : 0; loopU.uA.value = .9; frame(.016); frame(.016); },
     pause: stop, resume: start,
+    begin() { if (!intro0) intro0 = performance.now() + 350; },
   };
 }
 
