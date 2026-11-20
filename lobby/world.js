@@ -380,7 +380,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     const asp = W / H;
     // enquadra o triângulo (raio ~ 0.95 L na tela) com folga
     const r = L;
-    base = asp < 1 ? r * .8 / asp : r * .7;
+    base = asp < 1 ? r * .74 / asp : r * .7;
     applyCam();
   }
   const cMid = new THREE.Vector3(5 * L / 6, L / 2, L / 6);
