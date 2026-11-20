@@ -29,8 +29,11 @@
 ## Montaigne — Paradoxo II
 - Identidade oposta à do Idiota: dia em vez de noite, névoa (`#e2dfd6`) em vez de fumaça, papel de livro (`#efebe2`), tinta (`#1a1e25`) e rubrica vermelha (`#b0391f`) em vez de ouro.
 - Letra: EB Garamond, a letra de Claude Garamond, Paris, da geração de Montaigne. Títulos em serifa leve com itálico vermelho, capitular no começo de cada parágrafo, rótulos em Instrument Sans espaçada. Cantos retos, filetes, pontilhado de índice.
-- As cenas aparecem na névoa: a vinheta clareia em vez de escurecer, e o texto de cada cena tem uma clareira de névoa atrás.
-- Passagem entre cenas: o vento descasca a pintura em lascas de papel com tinta. Final: os quadros soltos sobem e somem.
+- Mecânica: um livro pop-up de capa dura vermelha sobre uma mesa na névoa (os Ensaios). Na entrada a capa abre. Cada cena é uma página dupla com a pintura impressa como prancha, títulos correntes, legenda em vermelho e número de página.
+- A figura recortada (com borda branca de papel) se levanta da página com mola quando a página termina de abrir e deita antes de a folha virar.
+- Passagem entre cenas: a folha vira com curvatura real (shader de vértice; o canto da frente vai antes) e o deslocamento de ar levanta papéis manuscritos soltos.
+- Texto: as letras chegam como tinta que assenta e saem uma por uma levadas pelo vento, girando como papel.
+- Final: o vento arranca as folhas uma depois da outra e a névoa vira papel branco, que é o fundo da página.
 - Atração: segurar amassa a pintura e escurece a sala em volta; soltar desdobra e revela a próxima.
 
 ## As portas (lobby)

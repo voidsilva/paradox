@@ -18,25 +18,18 @@
 {"imports":{"three":"./vendor/three/three.module.min.js","lobby/":"./lobby/"}}
 </script>
 </head>
-<body class="is-loading">
+<body class="is-loading intro">
 <canvas id="gl" aria-hidden="true"></canvas>
 
 <header class="top">
   <h1 class="brand">Paradoxo</h1>
-  <p class="mono top__meta" id="state" aria-live="polite"><span class="s-on">Impossível. Mas está aí.</span><span class="s-off">De lado, o truque aparece.</span></p>
+  <p class="mono top__meta" id="state" aria-live="polite"><span class="s-on">Arraste. Escolha uma porta.</span><span class="s-off">De lado, o truque aparece.</span></p>
 </header>
 
 <div class="tags" aria-hidden="true">
-  <div class="tag" data-id="idiota" style="--tone:#e2a24e"><span class="mono">I · O Idiota</span></div>
-  <div class="tag" data-id="montaigne" style="--tone:#c7d3dc"><span class="mono">II · Montaigne</span></div>
+  <div class="tag" data-id="idiota" style="--tone:#e2a24e"><span class="mono">I · O Idiota</span><i class="q">Ser bom é suficiente?</i></div>
+  <div class="tag" data-id="montaigne" style="--tone:#c7d3dc"><span class="mono">II · Montaigne</span><i class="q">Por que soltar faz dar certo?</i></div>
   <div class="tag tag--soon" data-id="soon"><span class="mono">III · em breve</span></div>
-</div>
-
-<div class="caps" aria-hidden="true">
-  <div class="cap" data-id="idiota" style="--tone:#e2a24e"><span class="mono">I · Dostoiévski, 1869</span><b><em>O</em> Idiota</b><i>Ser bom é suficiente num mundo que não é?</i></div>
-  <div class="cap" data-id="montaigne" style="--tone:#c7d3dc"><span class="mono">II · Montaigne, 1580</span><b><em>S</em>olte</b><i>Por que tudo melhora quando você para de apertar?</i></div>
-  <div class="cap" data-id="soon"><span class="mono">III</span><b><em>em</em> breve</b><i>Este ainda está sendo pintado.</i></div>
-  <div class="cap cap--idle on" data-id=""><span class="mono">Três portas, três gravidades</span><b>Ele só existe <em>deste ângulo.</em></b><i>Gire o objeto e veja o truque. Solte, e ele volta a ser impossível.</i></div>
 </div>
 
 <nav class="doors" aria-label="Escolha um paradoxo">
@@ -45,9 +38,7 @@
   <span class="doors__soon"><span class="mono">III</span>em breve</span>
 </nav>
 
-<p class="hint mono" id="hint"><span>Arraste para girar</span><span>Clique numa porta</span></p>
-
-<div class="load" id="load" aria-hidden="true"><span class="mono">Montando o impossível</span><i></i></div>
+<div class="load" id="load" aria-hidden="true"><i></i></div>
 <div class="veil" id="veil" aria-hidden="true"></div>
 <script type="module" src="lobby/lobby.js"></script>
 </body>

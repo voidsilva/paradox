@@ -186,3 +186,9 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
   .hold .cap h3 { font-size: clamp(52px, 15vw, 86px); }
 }
 @media (prefers-reduced-motion: reduce) { .hold .core__flat { transition: none; } }
+
+/* v9: o livro pop-up. As letras dos títulos voam soltas (sem máscara), a cena central fica acima do livro */
+.m .st .w { clip-path: none; }
+.m .st .ch { transform-origin: 50% 60%; }
+@media (min-width: 861px) { .m .st--c { top: 24%; transform: translate(-50%, -30%); } }
+.m .stage::before { background: radial-gradient(60% 55% at 16% 84%, rgba(226, 223, 214, .7), transparent 65%); }

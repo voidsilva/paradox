@@ -37,7 +37,7 @@ $$('.doors a').forEach(a => { a.addEventListener('pointerenter', () => lobby && 
 function hasGL() { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { return false; } }
 
 async function init() {
-  if (Q.get('q') === 'off' || !hasGL()) { body.classList.add('flat'); body.classList.remove('is-loading'); return; }
+  if (Q.get('q') === 'off' || !hasGL()) { body.classList.add('flat'); body.classList.remove('is-loading'); if (STILL || !lobby) body.classList.remove('intro'); return; }
   try {
     const { createLobby } = await import('lobby/world.js');
     const low = Q.get('q') === 'low' || (Q.get('q') !== 'high' && (matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4));
@@ -45,18 +45,18 @@ async function init() {
       canvas: $('#gl'), asset, portals: PORTALS, still: STILL, low,
       onHover: id => {
         $$('.tag').forEach(t => t.classList.toggle('on', t.dataset.id === id));
-        $$('.cap').forEach(c => c.classList.toggle('on', c.dataset.id === (id || '')));
         body.classList.toggle('hovering', !!id);
       },
-      onClose: c => body.classList.toggle('open', !c),
+      onClose: c => { body.classList.toggle('open', !c); if (c) { body.classList.remove('flash'); void body.offsetWidth; body.classList.add('flash'); } },
       onEnter: id => go(id),
+      onIntro: () => body.classList.remove('intro'),
     });
     window.__lobby = lobby;
   } catch (e) {
     console.warn('Sem 3D:', e);
     body.classList.add('flat');
   }
-  body.classList.remove('is-loading');
+  body.classList.remove('is-loading'); if (STILL || !lobby) body.classList.remove('intro');
   if (!lobby) return;
   // etiquetas presas às portas
   const place = () => {

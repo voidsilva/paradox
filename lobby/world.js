@@ -15,7 +15,7 @@ const D = new THREE.Vector3(1, 1, 1).normalize();
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-export async function createLobby({ canvas, asset = u => u, portals, still = false, low = false, onHover = () => {}, onClose = () => {}, onEnter = () => {} }) {
+export async function createLobby({ canvas, asset = u => u, portals, still = false, low = false, onHover = () => {}, onClose = () => {}, onEnter = () => {}, onIntro = () => {} }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: still });
   renderer.setPixelRatio(Math.min(devicePixelRatio, low ? 1.25 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -130,6 +130,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
   const gold = new THREE.MeshStandardMaterial({ color: 0xc9a056, roughness: .32, metalness: 1, envMapIntensity: 1.2 });
   const BEHIND = 1; // camada da terceira viga (desenhada antes)
   const beams = [];
+  const loopU = { uPhase: { value: 0 }, uA: { value: 0 } };
   // viga ao longo de x de comprimento len, depois girada para o eixo certo
   function beam(i, len, rot, pos) {
     const w = WALLS[i];
@@ -143,6 +144,18 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     const eg = new THREE.BoxGeometry(len, .09, .09);
     const em = i === 1 ? new THREE.MeshStandardMaterial({ color: 0x2b3038, roughness: .35, metalness: .9 }) : gold;
     for (const [y, z] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { const e = new THREE.Mesh(eg, em); e.position.set(0, y * T / 2, z * T / 2); g.add(e); }
+    // a luz que percorre o laço infinito: corre pelas três vigas e nunca chega
+    const lm = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uPhase: loopU.uPhase, uA: loopU.uA, uI: { value: i }, uLen: { value: len } },
+      vertexShader: 'uniform float uLen; varying float vX; void main(){ vX = position.x / uLen + .5; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
+      fragmentShader: `uniform float uPhase, uA, uI; varying float vX;
+        void main(){ float s = (uI + clamp(vX, 0., 1.)) / 3.; float d = fract(uPhase - s);
+          float g = exp(-d * 10.) * 2.6 + exp(-pow((1. - d) * 90., 2.)) * 2.4 + .1;
+          gl_FragColor = vec4(vec3(1., .82, .55) * g * uA, 1.); }`,
+    });
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(len, .22, .22), lm);
+    strip.position.set(0, T / 2 + .02, T / 2 + .02); g.add(strip);
     g.rotation.copy(rot); g.position.copy(pos);
     root.add(g); beams.push(g);
     return g;
@@ -284,6 +297,32 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
 
   await Promise.all(portals.map(portal));
   b3.traverse(o => o.layers.set(BEHIND));
+
+  // ---------- entrada: as peças chegam soltas, de longe, e se encaixam no impossível ----------
+  const pieces = [...beams, ...corners, ...P.map(p => p.g)].map((o, i) => {
+    const home = { p: o.position.clone(), q: o.quaternion.clone() };
+    const dir = new THREE.Vector3(Math.sin(i * 2.4), Math.cos(i * 1.7) * .8 + .3, Math.sin(i * 3.1 + 1)).normalize();
+    const spinQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.sin(i) * 1.6, Math.cos(i * 1.3) * 1.9, Math.sin(i * 2.2) * 1.2));
+    const delay = i < 3 ? i * .18 : i < 6 ? .55 + (i - 3) * .12 : 1.5 + (i - 6) * .15;
+    return { o, home, dir, spinQ, delay, dur: i < 6 ? 1.6 : 1.1 };
+  });
+  let introT = still ? 99 : 0, introDone = still, flash = 0;
+  const tq = new THREE.Quaternion();
+  function intro(dt) {
+    introT += dt;
+    let done = true;
+    for (const k of pieces) {
+      const e = clamp((introT - k.delay) / k.dur);
+      if (e < 1) done = false;
+      const s = 1 - Math.pow(1 - e, 4);
+      k.o.position.copy(k.home.p).addScaledVector(k.dir, (1 - s) * 34);
+      tq.copy(k.spinQ).multiply(k.home.q);
+      k.o.quaternion.slerpQuaternions(tq, k.home.q, s);
+      k.o.visible = e > 0;
+    }
+    if (done) { introDone = true; flash = 1; onIntro(); }
+  }
+  if (!still) intro(0);
   scene.traverse(o => { if (o.isLight) o.layers.enableAll(); });
 
   // ---------- câmera ----------
@@ -322,7 +361,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
   // ---------- interação ----------
   const ray = new THREE.Raycaster(); ray.layers.enableAll();
   const ptr = new THREE.Vector2(9, 9);
-  let drag = null, lastMove = 0, hover = null, closed = true, entering = null;
+  let drag = null, lastMove = 0, hover = null, closed = still, entering = null;
   const hits = P.map(p => p.hit);
   function pick(x, y) {
     const r = canvas.getBoundingClientRect();
@@ -389,8 +428,13 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     // gira devagar em torno do eixo de visão: continua fechado
     if (!entering) spin += dt * .035;
     pivot.quaternion.setFromAxisAngle(D, spin);
-    const isClosed = cam.yaw === 0 && cam.pitch === 0 && !entering;
-    if (isClosed !== closed) { closed = isClosed; if (closed) closeT = t; onClose(closed); }
+    if (!introDone) intro(dt);
+    // o laço de luz corre sempre; quando o objeto fecha, ele acende
+    flash = Math.max(0, flash - dt * .7);
+    loopU.uPhase.value = t * .16;
+    loopU.uA.value += (((closed ? .9 : .25) + flash * 2.5) * (introDone ? 1 : .2) - loopU.uA.value) * (1 - Math.pow(.02, dt));
+    const isClosed = cam.yaw === 0 && cam.pitch === 0 && !entering && introDone;
+    if (isClosed !== closed) { closed = isClosed; if (closed) { closeT = t; flash = Math.max(flash, .8); } onClose(closed); }
     // entrada
     if (entering) {
       const e = clamp((performance.now() - entering.t0) / 1300);
@@ -445,7 +489,7 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
     screen, enter: id => { const p = P.find(q => q.cfg.id === id); return p ? enter(p) : null; },
     get closed() { return closed; }, get entering() { return !!entering; },
     set(o) { if (o.yaw != null) cam.yaw = o.yaw; if (o.pitch != null) cam.pitch = o.pitch; if (o.spin != null) spin = o.spin; if (o.hover !== undefined) setHover(P.find(q => q.cfg.id === o.hover) || null); if (o.enter != null) { const p = P.find(q => q.cfg.id === o.enter); if (p) { enter(p); entering.t0 = performance.now() - o.t * 1300; } } },
-    settle() { lastMove = performance.now(); for (const p of P) p.hov = hover === p ? 1 : 0; frame(.016); frame(.016); },
+    settle() { lastMove = performance.now(); for (const p of P) p.hov = hover === p ? 1 : 0; loopU.uA.value = .9; frame(.016); frame(.016); },
     pause: stop, resume: start,
   };
 }

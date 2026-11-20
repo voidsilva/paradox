@@ -93,13 +93,13 @@ const MONTAIGNE = {
   paints: ['m01-pano', 'm02-montaigne', 'm03-janela', 'm04-barba', 'm05-punho', 'm06-multidao', 'm07-bobo', 'm08-leitor', 'm09-horizonte', 'm10-torre', 'm11-casal', 'm12-campo', 'm13-olhos', 'm14-ela', 'm15-praia', 'm16-bracos', 'm17-retrato', 'm18-colina'],
   cuts: ['m01-pano', 'm02-montaigne', 'm05-punho', 'm08-leitor', 'm09-horizonte', 'm11-casal', 'm12-campo', 'm16-bracos', 'm17-retrato'],
   scenes: [
-    { bg: 'm18-colina', dim: 0.9, look: -1.5, cuts: [{ k: 'm17-retrato', x: 6.5, y: -1.6, h: 12.5, z: 1.5 }] },
-    { bg: 'm04-barba', dim: 0.84, look: -3.5, cuts: [{ k: 'm05-punho', x: 7, y: -2.2, h: 9.5, z: 1 }] },
-    { bg: 'm06-multidao', dim: 0.85, look: 3.5, cuts: [{ k: 'm01-pano', x: -7.5, y: -1.8, h: 10.5, z: 2 }] },
-    { bg: 'm10-torre', dim: 0.9, look: -3.5, cuts: [{ k: 'm08-leitor', x: 7, y: -2.4, h: 9, z: 1.5 }] },
-    { bg: 'm13-olhos', dim: 0.79, look: 0, cuts: [{ k: 'm12-campo', x: -12.5, y: -3.2, h: 8.5, z: 0 }, { k: 'm09-horizonte', x: 12.5, y: -2, h: 10.5, z: 1 }] },
-    { bg: 'm14-ela', dim: 0.88, look: 3.5, cuts: [{ k: 'm11-casal', x: -7.5, y: -2.4, h: 8.5, z: 2 }] },
-    { bg: 'm15-praia', dim: 0.96, look: -1, cuts: [{ k: 'm16-bracos', x: 7.5, y: -1.6, h: 11.5, z: 1.5 }] },
+    { side: 'hero', bg: 'm18-colina', dim: 0.9, look: -1.5, cuts: [{ k: 'm17-retrato', x: 6.5, y: -1.6, h: 12.5, z: 1.5 }] },
+    { side: 'l', bg: 'm04-barba', dim: 0.84, look: -3.5, cuts: [{ k: 'm05-punho', x: 7, y: -2.2, h: 9.5, z: 1 }] },
+    { side: 'r', bg: 'm06-multidao', dim: 0.85, look: 3.5, cuts: [{ k: 'm01-pano', x: -7.5, y: -1.8, h: 10.5, z: 2 }] },
+    { side: 'l', bg: 'm10-torre', dim: 0.9, look: -3.5, cuts: [{ k: 'm08-leitor', x: 7, y: -2.4, h: 9, z: 1.5 }] },
+    { side: 'c', bg: 'm13-olhos', dim: 0.79, look: 0, cuts: [{ k: 'm12-campo', x: -12.5, y: -3.2, h: 8.5, z: 0 }, { k: 'm09-horizonte', x: 12.5, y: -2, h: 10.5, z: 1 }] },
+    { side: 'r', bg: 'm14-ela', dim: 0.88, look: 3.5, cuts: [{ k: 'm11-casal', x: -7.5, y: -2.4, h: 8.5, z: 2 }] },
+    { side: 'hero', bg: 'm15-praia', dim: 0.96, look: -1, cuts: [{ k: 'm16-bracos', x: 7.5, y: -1.6, h: 11.5, z: 1.5 }] },
   ],
 };
 
@@ -139,9 +139,10 @@ function reveal() {
   try { await document.fonts.ready; } catch (e) { /* segue */ }
   if (tier === 'off') { $('#gl').hidden = true; stage.classList.add('flat'); coreEl.classList.add('flat'); if (STILL) reveal(); else { clearInterval(picTimer); loader.classList.add('ready'); loadN.textContent = '27'; } return; }
   try {
-    const { createWorld } = await import('shared/world/world.js');
-    world = await createWorld({
-      canvas: $('#gl'), tier, still: STILL, config: MONTAIGNE,
+    const { createBook } = await import('./book.js');
+    const labels = $$('.st').map(el => { const n = $('.st__num', el); return n ? n.textContent.trim() : 'Prefácio — Quanto mais segura'; });
+    world = await createBook({
+      canvas: $('#gl'), tier, still: STILL, scenes: MONTAIGNE.scenes, labels, dir: MONTAIGNE.dir, asset,
       onProgress: v => { loadN.textContent = String(Math.round(v * 27)).padStart(2, '0'); },
     });
     window.__world = world;
@@ -277,15 +278,22 @@ const FALLBACK = MONTAIGNE.scenes.map(s => s.bg);
 const stage = $('.stage');
 let fbCur = -1;
 
-// título: cada letra sobe por trás de uma máscara e sai por cima, em onda
+// título: a letra chega como tinta que assenta e sai levada pelo vento, uma por uma, girando como papel solto
 function charStyle(chars, inN, outN) {
-  const N = chars.length, st = Math.min(.07, .9 / N);
+  const N = chars.length, st = Math.min(.05, .8 / N);
   chars.forEach((c, k) => {
-    const pi = easeOut(clamp(inN * (1 + N * st) - k * st));
-    const po = easeIO(clamp(outN * (1 + N * st) - k * st));
-    const y = outN > 0 ? -po * 115 : (1 - pi) * 115;
-    const r = outN > 0 ? -po * 10 : (1 - pi) * 14;
-    c.style.transform = `translate3d(0,${y.toFixed(1)}%,0) rotate(${r.toFixed(1)}deg)`;
+    const s = c._s || (c._s = [Math.random(), Math.random(), Math.random()]);
+    if (outN > 0) {
+      const po = easeIO(clamp(outN * (1 + N * st) - k * st));
+      const x = po * (70 + s[0] * 220), y = -po * (60 + s[1] * 160) + Math.sin(po * 6 + s[2] * 6) * 18 * po;
+      const r = po * (s[2] - .25) * 160;
+      c.style.transform = `translate3d(${x.toFixed(1)}%,${y.toFixed(1)}%,0) rotate(${r.toFixed(1)}deg) scale(${(1 - po * .35).toFixed(3)})`;
+      c.style.opacity = (1 - po * po).toFixed(3);
+    } else {
+      const pi = easeOut(clamp(inN * (1 + N * st) - k * st));
+      c.style.transform = `translate3d(0,${(-(1 - pi) * 38).toFixed(1)}%,0) rotate(${((1 - pi) * (s[2] - .5) * 24).toFixed(1)}deg)`;
+      c.style.opacity = pi.toFixed(3);
+    }
   });
 }
 
