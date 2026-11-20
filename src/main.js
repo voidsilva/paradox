@@ -7,6 +7,7 @@
 */
 import Lenis from 'lenis';
 import { createSound } from 'app/sound.js';
+import { ignite } from 'app/ignite.js';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -116,7 +117,10 @@ function reveal() {
   } else if (lenis) lenis.start();
   onScroll();
   // enquanto há 3D, o texto acompanha a câmera a cada quadro
-  const follow = () => { if (world) updateWorld(); requestAnimationFrame(follow); };
+  const follow = () => {
+    if (world) { const r = worldEl.getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight) updateWorld(); }
+    requestAnimationFrame(follow);
+  };
   if (world && !STILL) requestAnimationFrame(follow);
 }
 
@@ -233,6 +237,7 @@ const sts = $$('.st').map(el => ({
   el, i: +el.dataset.st,
   lines: $$('.ln', el).map(ln => ({ el: ln, chars: ln.closest('.st__t') && !reduced ? splitChars(ln) : null })),
 }));
+sts.forEach(s => s.lines.forEach(ln => ln.chars && prepChars(ln.chars)));
 const LAST = 6, SPAN = 6.6;
 const idx = $$('#index li'), indexEl = $('#index');
 const hdr = $('#hdr'), cue = $('#cue');
@@ -242,15 +247,49 @@ const FALLBACK = ['p15-rua', 'p09-caveira', 'p03-trem', 'p06-salao', 'p12-angust
 const stage = $('.stage');
 let fbCur = -1;
 
-// título: cada letra sobe por trás de uma máscara e sai por cima, em onda
+// título: as letras se acendem como brasa que esfria até a cor do texto;
+// na saída o fogo pega a palavra a partir de um ponto, cada letra fica em brasa,
+// carboniza e sobe como cinza.
+const EMBER = [255, 150, 64], CHAR = [34, 20, 12];
+const mixC = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+function prepChars(chars) {
+  const N = chars.length, ig = Math.random() * N; // ponto onde o fogo pega
+  chars.forEach((c, k) => {
+    const m = getComputedStyle(c).color.match(/\d+/g) || [241, 232, 216];
+    c._base = m.slice(0, 3).map(Number);
+    c._o = clamp(Math.abs(k - ig) / Math.max(4, N * .7)) * .75 + Math.random() * .25;
+    c._dx = (Math.random() - .5) * 60; c._r = (Math.random() - .5) * 50;
+    c._key = '';
+  });
+}
 function charStyle(chars, inN, outN) {
   const N = chars.length, st = Math.min(.07, .9 / N);
   chars.forEach((c, k) => {
-    const pi = easeOut(clamp(inN * (1 + N * st) - k * st));
-    const po = easeIO(clamp(outN * (1 + N * st) - k * st));
-    const y = outN > 0 ? -po * 115 : (1 - pi) * 115;
-    const r = outN > 0 ? -po * 10 : (1 - pi) * 14;
-    c.style.transform = `translate3d(0,${y.toFixed(1)}%,0) rotate(${r.toFixed(1)}deg)`;
+    let tf, col, sh = 'none', op = 1;
+    if (outN > 0) {
+      const b = clamp(outN * 1.7 - c._o * .7);
+      const heat = clamp(b / .3), burnt = clamp((b - .25) / .3), ash = easeOut(clamp((b - .45) / .55));
+      col = mixC(mixC(c._base, EMBER, heat), CHAR, burnt);
+      const g = heat * (1 - burnt * .7) * (1 - ash);
+      if (g > .02) sh = `0 0 ${(.12 + g * .25).toFixed(2)}em rgba(255,110,30,${(g * .9).toFixed(2)}), 0 0 .04em rgba(255,200,120,${g.toFixed(2)})`;
+      tf = `translate3d(${(c._dx * ash).toFixed(1)}%,${(-ash * 140).toFixed(1)}%,0) rotate(${(c._r * ash).toFixed(1)}deg) scale(${(1 - ash * .35).toFixed(3)})`;
+      op = 1 - ash;
+    } else {
+      const pi = easeOut(clamp(inN * (1 + N * st) - k * st));
+      const cool = clamp((pi - .35) / .65);
+      col = mixC(EMBER, c._base, cool);
+      const g = pi * (1 - cool);
+      if (g > .02) sh = `0 0 ${(.1 + g * .3).toFixed(2)}em rgba(255,120,40,${(g * .8).toFixed(2)})`;
+      tf = `translate3d(0,${((1 - pi) * 70).toFixed(1)}%,0) rotate(${((1 - pi) * 8).toFixed(1)}deg)`;
+      op = pi;
+    }
+    const key = tf + col + op;
+    if (key === c._key) return;
+    c._key = key;
+    c.style.transform = tf;
+    c.style.color = `rgb(${col})`;
+    c.style.textShadow = sh;
+    c.style.opacity = op.toFixed(3);
   });
 }
 
@@ -297,9 +336,17 @@ function updateWorld() {
 // borda de papel rasgado
 {
   const pts = []; let x = 0;
-  while (x < 100) { pts.push(`${x.toFixed(2)}% ${(30 + Math.random() * 70).toFixed(1)}%`); x += .6 + Math.random() * 1.8; }
+  while (x < 100) { pts.push(`${x.toFixed(2)}% ${(6 + Math.random() * 30 + Math.sin(x * .21) * 8).toFixed(1)}%`); x += .5 + Math.random() * 1.6; }
   pts.push('100% 60%', '100% 100%', '0% 100%');
   $('.tear').style.clipPath = `polygon(${pts.join(',')})`;
+  // faíscas que sobem da borda que ainda queima
+  const sm = document.createElement('div'); sm.className = 'smolder'; sm.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < (finePointer ? 26 : 14); i++) {
+    const e = document.createElement('i');
+    e.style.cssText = `left:${(Math.random() * 100).toFixed(1)}%;--t:${(2.2 + Math.random() * 2.8).toFixed(2)}s;--d:${(-Math.random() * 5).toFixed(2)}s;--x:${((Math.random() - .5) * 120).toFixed(0)}px;--h:${(90 + Math.random() * 160).toFixed(0)}px;--s:${(.5 + Math.random()).toFixed(2)}`;
+    sm.append(e);
+  }
+  $('.tear').after(sm);
 }
 
 const deck = $('#deck'), cards = $$('.dc', deck);
@@ -319,6 +366,23 @@ const seen = new IntersectionObserver(es => es.forEach(e => {
 }), { rootMargin: '0px 0px -10% 0px' });
 $$('.rv, .up').forEach(e => (reduced || STILL ? e.classList.add('in') : seen.observe(e)));
 
+// imagens do papel: pegam fogo e se revelam quando entram na tela
+if (!STILL && !reduced) {
+  const burnIn = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    burnIn.unobserve(e.target);
+    const el = e.target;
+    if (el.classList.contains('dc')) ignite($('img', el), { cover: '#f8f2e6', dur: 1.5, delay: (+el.dataset.k) * .12 });
+    else if (el.classList.contains('frame')) ignite(frameImg, { cover: '#120b07', dur: 2.2, delay: .25 });
+    else if (el.classList.contains('next')) ignite($('img', el), { cover: '#1b130d', dur: 1.8 });
+  }), { rootMargin: '0px 0px -18% 0px' });
+  $$('.dc').forEach((c, k) => { c.dataset.k = k; ignite($('img', c), { cover: '#f8f2e6', dur: 0 }); burnIn.observe(c); });
+  [$('.frame'), $('.next')].forEach(el => el && burnIn.observe(el));
+  // começam cobertas
+  const fi = $('.player__face img'); if (fi) ignite(fi, { cover: '#120b07', dur: 0 });
+  const ni = $('.next img'); if (ni) ignite(ni, { cover: '#1b130d', dur: 0 });
+}
+
 // parágrafo que acende palavra por palavra com a rolagem
 const lede = $('.lede'), ledeWords = splitWords(lede);
 // moldura do vídeo abre com a rolagem
@@ -327,6 +391,7 @@ const frame = $('.frame'), frameImg = $('.player__face img');
 function updatePage() {
   const page = $('#page').getBoundingClientRect();
   hdr.classList.toggle('on-page', page.top < 40);
+  $('#page').classList.toggle('lit', page.top < innerHeight + 60 && page.top > -260);
   const lr = lede.getBoundingClientRect();
   const lp = reduced ? 1 : clamp((innerHeight * .85 - lr.top) / (lr.height + innerHeight * .3));
   const lit = lp * (ledeWords.length + 3);
@@ -386,9 +451,13 @@ if (finePointer && !reduced && !STILL) {
 }
 
 // retrato que segue o cursor
-const peek = $('#peek');
+const peek = $('#peek'), peekImg = $('img', peek);
 $$('#cast li').forEach(li => {
-  li.addEventListener('pointerenter', () => { peek.src = li.dataset.img; peek.classList.add('on'); });
+  li.addEventListener('pointerenter', () => {
+    if (peekImg.dataset.src !== li.dataset.img) { peekImg.dataset.src = li.dataset.img; peekImg.src = asset(li.dataset.img); }
+    peek.classList.add('on');
+    if (!reduced) ignite(peekImg, { cover: '#eee4d1', dur: .75 });
+  });
   li.addEventListener('pointerleave', () => peek.classList.remove('on'));
   li.addEventListener('pointermove', e => { peek.style.left = e.clientX + 'px'; peek.style.top = e.clientY + 'px'; });
 });
@@ -400,7 +469,10 @@ const ANS = {
 };
 $$('[data-pick]').forEach(b => b.addEventListener('click', () => {
   $$('[data-pick]').forEach(x => x.setAttribute('aria-pressed', x === b));
-  $('#pickA').textContent = ANS[b.dataset.pick];
+  const a = $('#pickA');
+  a.textContent = ANS[b.dataset.pick];
+  splitWords(a).forEach((w, k) => w.style.setProperty('--k', k));
+  a.classList.remove('burnin'); void a.offsetWidth; a.classList.add('burnin');
 }));
 
 // player
