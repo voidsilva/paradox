@@ -3,22 +3,25 @@
 // O scroll leva a câmera para dentro de uma pintura e para fora, rumo à próxima.
 import * as THREE from 'three';
 
-export const PAINTS = [
+// Configuração padrão: O Idiota. Outro paradoxo passa a própria configuração em createWorld({ config }).
+const PAINTS = [
   'p01-retrato', 'p02-dostoievski', 'p03-trem', 'p04-dois-homens', 'p05-nastassia', 'p06-salao', 'p07-flor',
   'p08-jovem', 'p09-caveira', 'p10-dama', 'p11-cabisbaixo', 'p12-angustia', 'p13-perfil', 'p14-cafe',
   'p15-rua', 'p16-olhar', 'p17-lenco', 'p18-gola', 'p19-brinde', 'p20-duas', 'p21-jardim',
 ];
-export const CUTS = [
+const CUTS = [
   'p01-retrato', 'p02-dostoievski', 'p03-trem', 'p05-nastassia', 'p07-flor', 'p08-jovem',
   'p10-dama', 'p11-cabisbaixo', 'p17-lenco', 'p18-gola', 'p20-duas',
 ];
+
+export const IDIOTA = { paints: PAINTS, cuts: CUTS, scenes: null, dir: 'img/', fog: 0x0d0907, gold: 0xb8893a, mode: 'burn', notes: 3, rays: 5, glow: 5, finale: 'wall' };
 
 const SPACING = 64;  // distância entre cenas
 const REST = 25;     // distância da câmera ao plano das figuras em repouso
 const BG_BACK = 13;  // fundo fica atrás das figuras
 
 // layout de cada cena: fundo, figuras {k, x, y, h, z}, enquadramento {lx} e brilho
-const SCENES = [
+IDIOTA.scenes = [
   { bg: 'p15-rua', dim: .42, look: -1.5, cuts: [{ k: 'p01-retrato', x: 1.8, y: -1.2, h: 10.5, z: 2 }, { k: 'p05-nastassia', x: 8.8, y: -1.6, h: 12, z: 0 }] },
   { bg: 'p09-caveira', dim: .5, look: -3.5, cuts: [{ k: 'p02-dostoievski', x: 6.5, y: -1.8, h: 11.5, z: 1 }] },
   { bg: 'p03-trem', dim: .55, look: 3.5, cuts: [{ k: 'p03-trem', x: -6.5, y: -1.6, h: 11.5, z: 2.5 }] },
@@ -40,7 +43,7 @@ const vert = /* glsl */`
     gl_Position = projectionMatrix * mv;
   }`;
 const frag = /* glsl */`
-  uniform sampler2D map; uniform float uOpacity, uDim, uShift, uVig, uFrame, uCut, uNear, uFar, uAsp, uBurn, uSeed, uSheen;
+  uniform sampler2D map; uniform float uOpacity, uDim, uShift, uVig, uFrame, uCut, uNear, uFar, uAsp, uBurn, uSeed, uSheen, uMode;
   uniform vec3 uFog, uGold; uniform vec2 uLight;
   varying vec2 vUv; varying float vDepth;
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -68,7 +71,15 @@ const frag = /* glsl */`
     float sh = dot(uv - uLight, normalize(vec2(1., .55)));
     col += vec3(1., .9, .72) * exp(-sh*sh*38.) * .07 * uSheen;
     // queima: ao chegar perto, a tela pega fogo do centro para fora e abre passagem
-    if (uBurn > .001) {
+    if (uBurn > .001 && uMode > .5) {
+      // desapego: a tela se solta em lascas levadas pelo vento, da esquerda para a direita, e vira luz
+      vec2 q = (uv - .5) * vec2(uAsp, 1.);
+      float m = fbm(q * vec2(5., 9.) + uSeed * 17.) * .55 + noise(q * 40. + uSeed * 5.) * .12 + (1. - uv.x) * .5 + (1. - abs(uv.y - .5) * 2.) * .08;
+      float th = 1.12 - uBurn * 1.4;
+      if (m > th) discard;
+      col = mix(col, col * 1.25 + vec3(.06, .05, .04), smoothstep(th - .2, th - .02, m));
+      col += vec3(1., .93, .8) * smoothstep(th - .03, th, m) * 1.1;
+    } else if (uBurn > .001) {
       vec2 q = (uv - .5) * vec2(uAsp, 1.);
       float r = length(q) / (.5 * max(uAsp, 1.));
       float m = fbm(q * 6. + uSeed * 17.) * .5 + noise(q * 30. + uSeed * 5.) * .1 + (1. - r) * .4;
@@ -83,12 +94,14 @@ const frag = /* glsl */`
     gl_FragColor = vec4(col, a * uOpacity);
   }`;
 
-export async function createWorld({ canvas, base = '', tier = 'high', still = false, onProgress = () => {} }) {
+export async function createWorld({ canvas, base = '', tier = 'high', still = false, onProgress = () => {}, config = IDIOTA }) {
   const HIGH = tier === 'high';
+  const C = { ...IDIOTA, ...config };
+  const SCENES = C.scenes, PAINTS = C.paints, CUTS = C.cuts, WIND = C.mode === 'wind';
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: HIGH, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: still });
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // trabalhamos direto em sRGB
   renderer.setPixelRatio(HIGH ? Math.min(devicePixelRatio || 1, 2) : Math.min(devicePixelRatio || 1, 1.25));
-  const FOG = new THREE.Color(0x0d0907);
+  const FOG = new THREE.Color(C.fog), FOG0 = FOG.clone(), DAWN = new THREE.Color(C.dawn ?? C.fog);
   renderer.setClearColor(FOG, 1);
 
   const scene = new THREE.Scene();
@@ -105,8 +118,8 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     tex[key] = t; onProgress(++done / total); res();
   }, undefined, () => { onProgress(++done / total); res(); }));
   await Promise.all([
-    ...PAINTS.map(k => load('p:' + k, 'img/paint/' + k + '.jpg')),
-    ...CUTS.map(k => load('c:' + k, 'img/cut/' + k + '.webp')),
+    ...PAINTS.map(k => load('p:' + k, C.dir + 'paint/' + k + '.jpg')),
+    ...CUTS.map(k => load('c:' + k, C.dir + 'cut/' + k + '.webp')),
   ]);
 
   const planes = [];
@@ -119,9 +132,9 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
         map: { value: t }, uOpacity: { value: 1 }, uDim: { value: o.dim ?? 1 }, uShift: { value: 0 },
         uVig: { value: o.vig ? 1 : 0 }, uFrame: { value: o.frame ? 1 : 0 }, uCut: { value: o.cut ? 1 : 0 },
         uNear: { value: o.near ?? 40 }, uFar: { value: o.far ?? 120 }, uAsp: { value: asp },
-        uFog: { value: FOG }, uGold: { value: new THREE.Color(0xb8893a) },
+        uFog: { value: FOG }, uGold: { value: new THREE.Color(C.gold) },
         uBend: { value: 0 }, uTime: { value: 0 }, uSeed: { value: Math.random() },
-        uBurn: { value: 0 }, uSheen: { value: o.cut ? .5 : 1 }, uLight: { value: new THREE.Vector2(.5, .5) },
+        uBurn: { value: 0 }, uSheen: { value: o.cut ? .5 : 1 }, uLight: { value: new THREE.Vector2(.5, .5) }, uMode: { value: WIND ? 1 : 0 },
       },
     });
     const m = new THREE.Mesh(new THREE.PlaneGeometry(h * asp, h, seg, seg), mat);
@@ -203,7 +216,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   const gold = dust(HIGH ? 1600 : 600, { x: 60, y: 30, z0: 30, z: SPACING * SCENES.length + 40 }, 0xe8c27a, 2.2, .25);
   gold.visible = false; // tela limpa: sem poeira
   const embers = dust(HIGH ? 500 : 220, { x: 34, y: 26, z0: 8, z: 24 }, 0xff6a2a, 3, 2.2);
-  embers.position.z = stages[3].g.position.z;
+  embers.position.z = stages[Math.max(0, C.notes)].g.position.z;
   embers.visible = false;
 
   // luz da cena V: um disco suave atrás da figura
@@ -214,7 +227,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     fragmentShader: `uniform float uA; varying vec2 vUv; void main(){ float r = length(vUv-.5)*2.; vec3 c = vec3(1.,.86,.62)*(exp(-r*r*5.)*.55 + exp(-r*r*40.)*.5); gl_FragColor = vec4(c*uA, 1.); }`,
   }));
   glow.position.set(-3, 2, -4);
-  stages[5].g.add(glow);
+  if (C.glow >= 0) stages[C.glow].g.add(glow);
 
   // ---------- faíscas: saem da borda da pintura que está queimando ----------
   const sparks = (() => {
@@ -225,21 +238,32 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     geo.setAttribute('position', new THREE.BufferAttribute(p, 3));
     geo.setAttribute('aR', new THREE.BufferAttribute(a, 3));
     const mat = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
-      uniforms: { uBurn: { value: 0 }, uAmt: { value: 0 }, uTime: { value: 0 }, uPx: { value: renderer.getPixelRatio() }, uW: { value: 30 } },
-      vertexShader: `attribute vec3 aR; uniform float uBurn, uTime, uPx, uW; varying float vA;
+      transparent: true, depthWrite: false, depthTest: false,
+      uniforms: { uBurn: { value: 0 }, uAmt: { value: 0 }, uTime: { value: 0 }, uPx: { value: renderer.getPixelRatio() }, uW: { value: 30 }, uWind: { value: WIND ? 1 : 0 } },
+      blending: WIND ? THREE.NormalBlending : THREE.AdditiveBlending,
+      vertexShader: `attribute vec3 aR; uniform float uBurn, uTime, uPx, uW, uWind; varying float vA, vS;
         void main(){
           float life = fract(aR.y + uTime * (.35 + aR.z * .5));
           float R = uBurn * uW * (.55 + aR.z * .5);
           vec3 p = vec3(cos(aR.x) * R, sin(aR.x) * R * .62, 0.);
-          p += vec3(cos(aR.x) * life * 2.5, life * life * (3. + aR.z * 4.), life * (4. + aR.y * 10.));
-          p.x += sin(life * 9. + aR.x * 5.) * .4;
+          if (uWind > .5) {
+            // lascas de tela: nascem na borda que se solta e o vento leva para a direita e para cima
+            p = vec3((uBurn * 2. - 1.) * uW * (.9 + aR.z * .3), (aR.y - .5) * uW * 1.15, 0.);
+            p += vec3(life * (8. + aR.z * 16.), life * (2. + aR.y * 5.) + sin(life * 6. + aR.x * 3.) * .8, life * (3. + aR.y * 9.));
+          } else {
+            p += vec3(cos(aR.x) * life * 2.5, life * life * (3. + aR.z * 4.), life * (4. + aR.y * 10.));
+            p.x += sin(life * 9. + aR.x * 5.) * .4;
+          }
           vec4 mv = modelViewMatrix * vec4(p, 1.);
-          vA = (1. - life) * smoothstep(0., .08, life);
-          gl_PointSize = clamp((1.2 + aR.z * 2.6) * uPx * 26. / -mv.z, 1., 14.);
+          vA = (1. - life) * smoothstep(0., .08, life); vS = aR.x;
+          gl_PointSize = clamp((1.2 + aR.z * 2.6) * uPx * (uWind > .5 ? 44. : 26.) / -mv.z, 1., uWind > .5 ? 22. : 14.);
           gl_Position = projectionMatrix * mv; }`,
-      fragmentShader: `uniform float uAmt; varying float vA;
+      fragmentShader: `uniform float uAmt, uWind; varying float vA, vS;
         void main(){ float r = length(gl_PointCoord - .5); float a = exp(-r * r * 26.);
+          if (uWind > .5) {
+            vec2 q = gl_PointCoord - .5; float c = cos(vS * 3.), s = sin(vS * 3.); q = mat2(c, s, -s, c) * q;
+            float f = step(abs(q.x), .38) * step(abs(q.y), .14 + .1 * fract(vS * 7.));
+            if (f < .5) discard; gl_FragColor = vec4(mix(vec3(.95, .88, .74), vec3(1., .75, .55), fract(vS * 3.)), vA * uAmt * 1.4); return; }
           gl_FragColor = vec4(vec3(1., .55, .2) * a * vA * uAmt * 1.6 + vec3(1., .9, .7) * exp(-r * r * 120.) * vA * uAmt, 1.); }`,
     });
     const pts = new THREE.Points(geo, mat);
@@ -309,7 +333,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     });
     const im = new THREE.InstancedMesh(geo, mat, n);
     im.frustumCulled = false; im.renderOrder = 5;
-    stages[3].g.add(im);
+    if (C.notes >= 0) stages[C.notes].g.add(im);
     return im;
   })();
 
@@ -332,7 +356,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     r.userData.ph = i * 1.7;
     rays.add(r);
   }
-  stages[5].g.add(rays);
+  if (C.rays >= 0) stages[C.rays].g.add(rays);
 
   // ---------- final: os quadros soltos se juntam numa parede de museu ----------
   {
@@ -346,7 +370,13 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     }
     cells.sort((a, b) => a.d - b.d);
     const sz = stages[SCENES.length - 1].g.position.z;
-    fillers.forEach((m, i) => {
+    if (C.finale === 'release') fillers.forEach((m, i) => {
+      // os quadros são soltos: sobem devagar como lanternas e somem na luz
+      m.userData.wall = new THREE.Vector3(m.userData.home.x * 1.6, 26 + Math.random() * 30, m.userData.home.z);
+      m.userData.wallScale = .7;
+      m.userData.delay = Math.random() * .4;
+    });
+    else fillers.forEach((m, i) => {
       const cell = cells[i % cells.length];
       const hgt = m.geometry.parameters.height;
       m.userData.wall = new THREE.Vector3(cell.x, cell.y, sz - 10 - (i % 3) * .6);
@@ -359,17 +389,18 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   const rt = new THREE.WebGLRenderTarget(2, 2, { samples: HIGH ? 4 : 0 });
   const post = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false,
-    uniforms: { tD: { value: rt.texture }, uCA: { value: 0 }, uWarp: { value: 0 }, uHaze: { value: 0 }, uTime: { value: 0 }, uFlash: { value: 0 } },
+    uniforms: { tD: { value: rt.texture }, uCA: { value: 0 }, uWarp: { value: 0 }, uHaze: { value: 0 }, uTime: { value: 0 }, uFlash: { value: 0 }, uWind: { value: WIND ? 1 : 0 } },
     vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }`,
-    fragmentShader: `uniform sampler2D tD; uniform float uCA, uWarp, uHaze, uTime, uFlash; varying vec2 vUv;
+    fragmentShader: `uniform sampler2D tD; uniform float uCA, uWarp, uHaze, uTime, uFlash, uWind; varying vec2 vUv;
       void main(){
         vec2 d = vUv - .5; float r2 = dot(d, d);
         vec2 uv = .5 + d * (1. - uWarp * r2 * .5);
-        uv += uHaze * .0045 * vec2(sin(uv.y * 70. + uTime * 7.), cos(uv.x * 55. + uTime * 6.));
+        uv += uHaze * (1. - uWind) * .0045 * vec2(sin(uv.y * 70. + uTime * 7.), cos(uv.x * 55. + uTime * 6.));
+        uv.x -= uHaze * uWind * .006 * sin(uv.y * 9. + uTime * 2.);
         vec2 o = d * uCA * (.35 + r2 * 3.);
         vec3 c = vec3(texture2D(tD, uv + o).r, texture2D(tD, uv).g, texture2D(tD, uv - o).b);
         c *= 1. - smoothstep(.18, .75, r2) * .55;
-        c += vec3(1., .5, .2) * uHaze * .06 * (1. - r2 * 2.);
+        c += mix(vec3(1., .5, .2), vec3(.9, .85, .8), uWind) * uHaze * .06 * (1. - r2 * 2.);
         c = mix(c, vec3(1., .94, .84), uFlash);
         gl_FragColor = vec4(c, 1.); }`,
   }));
@@ -509,17 +540,19 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
       const wf = ease(clamp((fin - m.userData.delay) / .5));
       const fy = h.y + Math.sin(time * .4 + m.userData.phase) * .4 * (1 - wf);
       m.position.set(h.x + (wl.x - h.x) * wf, fy + (wl.y - fy) * wf, h.z + (wl.z - h.z) * wf);
-      m.rotation.y = m.userData.ry * (1 - wf);
-      m.rotation.z = m.userData.rz * (1 - wf);
+      m.rotation.y = m.userData.ry * (C.finale === 'release' ? 1 + wf : 1 - wf);
+      m.rotation.z = m.userData.rz * (1 - wf) + (C.finale === 'release' ? Math.sin(m.userData.phase) * wf * .5 : 0);
       m.scale.setScalar(1 + (m.userData.wallScale - 1) * wf);
       m.material.uniforms.uNear.value = 30 + fe * 55;
       m.material.uniforms.uFar.value = 105 + fe * 90;
       m.material.uniforms.uDim.value = .82 + wf * .12;
       const dz = camera.position.z - m.position.z;
       m.visible = dz > -2 && dz < 120;
-      m.material.uniforms.uOpacity.value = clamp(dz / 6);
+      m.material.uniforms.uOpacity.value = clamp(dz / 6) * (C.finale === 'release' ? 1 - wf * .85 : 1);
       m.material.uniforms.uLight.value = light;
     });
+    // no fim do desapego o escuro vira manhã
+    if (C.dawn != null) { FOG.copy(FOG0).lerp(DAWN, fe); renderer.setClearColor(FOG, 1); }
 
     sparks.position.set(hotX, 0, hotZ);
     sparks.material.uniforms.uAmt.value = Math.min(.6, hot * .8);

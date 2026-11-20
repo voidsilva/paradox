@@ -1,0 +1,77 @@
+/* Solte — tema de Montaigne: madrugada fria que vira manhã de névoa.
+   Só troca tokens e os poucos tons fixos do styles.css compartilhado. */
+body.m {
+  --night: #0a0d12;
+  --bone: #eef0ec;
+  --bone-2: rgba(238, 240, 236, .74);
+  --gold: #f0b48a;          /* damasco: a luz da manhã, no lugar do ouro */
+  --ember: #b5562f;
+  --paper: #e6e3da;
+  --paper-2: #d8d5cb;
+  --ink: #121820;
+  --ink-2: #4f5a66;
+  --line: rgba(18, 24, 32, .16);
+}
+body.m ::selection { background: var(--gold); color: var(--ink); }
+
+/* tons que o styles.css fixa em marrom */
+.m .menu { background: rgba(10, 13, 18, .96); }
+.m .stage::before { background: radial-gradient(90% 70% at 18% 88%, rgba(10, 13, 18, .6), transparent 62%), radial-gradient(70% 60% at 90% 30%, rgba(10, 13, 18, .22), transparent 70%); }
+.m .st__t { text-shadow: 0 2px 40px rgba(10, 13, 18, .5); }
+.m .st__p { text-shadow: 0 1px 18px rgba(10, 13, 18, .75); }
+.m .loader__pic, .m .frame { background: linear-gradient(135deg, #9aa3ab, #eef0ec 22%, #6b737c 48%, #d9dcd8 72%, #5b6169); }
+.m .loader__pic img { filter: saturate(.85) contrast(1.05); }
+.m .loader__mark { text-shadow: 0 10px 40px rgba(10, 13, 18, .8); }
+.m .hdr.on-page { background: linear-gradient(var(--paper) 55%, rgba(230, 227, 218, 0)); }
+.m .dc__f { background: #f4f2ec; }
+.m .dc__b { background: radial-gradient(120% 90% at 30% 10%, #263240, var(--ink)); box-shadow: inset 0 0 0 1px rgba(240, 180, 138, .35); }
+.m .cur--ring.hot { background: rgba(240, 180, 138, .14); }
+.m .stage.flat::after { background: radial-gradient(120% 90% at 50% 40%, rgba(10, 13, 18, .25), rgba(10, 13, 18, .85)); }
+
+/* ===== Segure ===== */
+.core.hold { height: 420vh; }
+.hold .core__stage { background: radial-gradient(70% 70% at 50% 46%, #1b2430 0%, #10161e 48%, var(--night) 82%); transition: background 1s; }
+.hold .core__stage::after { background: radial-gradient(90% 70% at 15% 90%, rgba(10, 13, 18, .72), transparent 60%); }
+/* quanto mais aperta, mais a sala escurece em volta */
+.hold .core__stage::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(60% 60% at 50% 48%, transparent 30%, rgba(4, 6, 9, .85)); opacity: calc(var(--g, 0) * .9); }
+#coreGl { cursor: grab; }
+.holding #coreGl { cursor: grabbing; }
+.hold .core__flat { right: 0; left: 0; margin: auto; width: min(64vw, 820px); aspect-ratio: 16 / 10; transition: transform .2s; transform: translateY(-50%) scale(calc(1 - var(--g, 0) * .12)); }
+.hold .cap { z-index: 3; }
+.hold .cap h3 { text-shadow: 0 4px 40px rgba(10, 13, 18, .6); }
+.hold .cap--c { bottom: auto; top: 50%; transform: translate(-50%, -50%); }
+.hold .cap--c h3 { font-size: clamp(40px, 5vw, 84px); }
+
+.hold__btn {
+  position: absolute; z-index: 4; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); translate: -50% 0;
+  display: flex; align-items: center; gap: 14px; padding: 10px 22px 10px 10px; border-radius: 99px;
+  color: var(--bone); background: rgba(238, 240, 236, .08); border: 1px solid rgba(238, 240, 236, .22);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none;
+  transition: background .3s, border-color .3s, scale .3s var(--ease);
+}
+.hold__btn i { order: -1; position: relative; width: 44px; height: 44px; border-radius: 50%; background: conic-gradient(var(--gold) calc(var(--g, 0) * 360deg), rgba(238, 240, 236, .16) 0); }
+.hold__btn i::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--night); box-shadow: inset 0 0 0 1px rgba(238, 240, 236, .2); }
+.hold__btn i::before { content: ""; position: absolute; z-index: 1; inset: 17px; border-radius: 50%; background: var(--gold); scale: calc(.6 + var(--g, 0) * .8); }
+.hold__btn:hover { background: rgba(238, 240, 236, .14); }
+.hold__btn[aria-pressed="true"] { scale: .96; border-color: var(--gold); background: rgba(240, 180, 138, .14); }
+.hold__btn[aria-pressed="true"] span::after { content: "…"; }
+/* no desktop o botão é só um lembrete: segurar em qualquer lugar funciona */
+@media (hover: hover) and (pointer: fine) { .hold__btn span { font-size: 0; } .hold__btn span::before { content: "Segure em qualquer lugar"; font-size: 11px; } }
+.cur--ring.grip { width: 22px; height: 22px; margin: -11px 0 0 -11px; background: rgba(240, 180, 138, .3); border-width: 2px; }
+
+@media (max-width: 860px) {
+  .hold .core__flat { width: 92vw; height: auto; bottom: auto; }
+  .hold .cap { bottom: 17vh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hold .core__flat { transition: none; }
+}
+
+/* as frases de Montaigne são mais longas que as do Idiota */
+.m .st--hero { max-width: calc(100vw - 2 * var(--gut) - 190px); }
+.m .st--hero .st__t { font-size: clamp(52px, 8.4vw, 150px); }
+@media (max-width: 860px) {
+  .m .st--hero { max-width: none; }
+  .m .st--hero .st__t { font-size: clamp(38px, 10.6vw, 72px); }
+}

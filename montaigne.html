@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solte — o paradoxo de Montaigne</title>
+<meta name="description" content="Quanto mais você segura, mais escapa. A filosofia de Michel de Montaigne contada com as pinturas do vídeo “Quando você para de se importar, tudo começa a dar certo”.">
+<meta name="theme-color" content="#0a0d12">
+<meta property="og:title" content="Solte — o paradoxo de Montaigne">
+<meta property="og:description" content="Quanto mais você segura, mais escapa.">
+<meta property="og:image" content="montaigne/img/og.jpg">
+<meta property="og:type" content="website">
+<link rel="icon" href="montaigne/img/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/bodoni-italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="src/styles.css">
+<link rel="stylesheet" href="montaigne/src/theme.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CreativeWork","name":"Solte — o paradoxo de Montaigne","about":{"@type":"Book","name":"Ensaios","author":{"@type":"Person","name":"Michel de Montaigne"},"datePublished":"1580"},"inLanguage":"pt-BR","citation":{"@type":"VideoObject","name":"Quando Você Para de se Importar, Tudo Começa a Dar Certo – A Filosofia de Michel de Montaigne","url":"https://www.youtube.com/watch?v=LWuZr9304Y4"}}
+</script>
+<script type="importmap">
+{"imports":{"three":"./vendor/three/three.module.min.js","lenis":"./vendor/lenis/lenis.mjs","app/":"./montaigne/src/","shared/":"./src/"}}
+</script>
+</head>
+<body class="is-loading m">
+
+<div class="loader" id="loader" aria-live="polite">
+  <div class="loader__pic" aria-hidden="true"><img id="loadPic" src="montaigne/img/paint/m17-retrato.jpg" alt=""></div>
+  <p class="loader__mark"><i>S</i>olte</p>
+  <p class="mono loader__n"><span id="loadN">00</span> / 27 pinturas</p>
+  <div class="loader__go">
+    <button class="pill pill--glow" id="enterSnd" type="button">Entrar com som</button>
+    <button class="loader__mute mono" id="enterMute" type="button">Entrar em silêncio</button>
+  </div>
+</div>
+
+<header class="hdr" id="hdr">
+  <a class="hdr__mark" href="index.html" aria-label="Voltar ao lobby dos paradoxos"><i>S</i><span>olte</span><small class="mono">o paradoxo de Montaigne</small></a>
+  <nav class="hdr__nav mono" aria-label="Seções">
+    <a href="#segure">Segure</a>
+    <a href="#soltar">Seis coisas</a>
+    <a href="#vida">A vida dele</a>
+    <a href="#video">O vídeo</a>
+  </nav>
+  <button class="hdr__snd mono" id="sndBtn" type="button" aria-pressed="false" aria-label="Trilha sonora"><i></i><i></i><i></i><i></i><span>Som</span></button>
+  <button class="hdr__menu mono" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu">Menu</button>
+</header>
+
+<nav class="menu" id="menu" hidden aria-label="Menu">
+  <a href="#top"><span class="mono">I</span>Início</a>
+  <a href="#segure"><span class="mono">II</span>Segure</a>
+  <a href="#soltar"><span class="mono">III</span>Seis coisas para soltar</a>
+  <a href="#vida"><span class="mono">IV</span>A vida dele</a>
+  <a href="#video"><span class="mono">V</span>O vídeo</a>
+  <a href="index.html"><span class="mono">←</span>Outros paradoxos</a>
+</nav>
+
+<ol class="index mono" id="index" aria-hidden="true">
+  <li><span>O começo</span><b>·</b></li>
+  <li><span>Controle</span><b>I</b></li>
+  <li><span>A plateia</span><b>II</b></li>
+  <li><span>A torre</span><b>III</b></li>
+  <li><span>Clareza</span><b>IV</b></li>
+  <li><span>Amar</span><b>V</b></li>
+  <li><span>Soltar</span><b>VI</b></li>
+</ol>
+
+<main id="top">
+  <section class="world" id="world" aria-label="Montaigne em sete cenas">
+    <div class="stage" id="stage">
+      <canvas id="gl" aria-hidden="true"></canvas>
+
+      <article class="st st--hero" data-st="0">
+        <p class="mono st__kick ln" style="display:flex"><span>Michel de Montaigne</span><span>Ensaios, 1580</span></p>
+        <h1 class="st__t"><span class="ln"><em class="sw">Quanto mais segura,</em></span><span class="ln"><b>mais escapa.</b></span></h1>
+      </article>
+
+      <article class="st st--l" data-st="1">
+        <p class="mono st__num ln">I — A ilusão do controle</p>
+        <h2 class="st__t"><span class="ln"><b>Controlar</b></span><span class="ln"><em class="sw">o incontrolável</em></span></h2>
+        <p class="st__p ln">A gente planeja, ensaia, se preocupa, como se a vida fosse uma equação que fecha com esforço. Montaigne olhou para isso sem ilusão: o controle é, quase sempre, uma fantasia que cansa.</p>
+      </article>
+
+      <article class="st st--r" data-st="2">
+        <p class="mono st__num ln">II — A plateia</p>
+        <h2 class="st__t"><span class="ln"><em class="sw">viver para</em></span><span class="ln"><b>o olhar alheio</b></span></h2>
+        <p class="st__p ln">Desde criança, aprovação vira recompensa. Aos poucos você molda a fala, a roupa, as escolhas, até não saber mais o que era seu. Montaigne escreveu para se entender, não para convencer ninguém.</p>
+      </article>
+
+      <article class="st st--l" data-st="3">
+        <p class="mono st__num ln">III — A torre</p>
+        <h2 class="st__t"><span class="ln"><b>Uma torre,</b></span><span class="ln"><em class="sw">não uma fuga</em></span></h2>
+        <p class="st__p ln">Perdeu o melhor amigo, perdeu cinco de seus seis filhos ainda pequenos, viu a França se rasgar em guerra civil. Não endureceu. Subiu para uma torre de livros, com frases em latim no teto, e começou a estudar a si mesmo.</p>
+      </article>
+
+      <article class="st st--c" data-st="4">
+        <p class="mono st__num ln">IV — Desapego é clareza</p>
+        <h2 class="st__t st__t--list">
+          <span class="ln"><b>Desapego</b> <em class="sw">não é</em> <b>frieza.</b></span>
+          <span class="ln"><b>Entrega</b> <em class="sw">não é</em> <b>desistir.</b></span>
+          <span class="ln"><b>Leveza</b> <em class="sw">não é</em> <b>descaso.</b></span>
+        </h2>
+      </article>
+
+      <article class="st st--r" data-st="5">
+        <p class="mono st__num ln">V — Amar sem prender</p>
+        <h2 class="st__t"><span class="ln"><em class="sw">segurar alguém</em></span><span class="ln"><b>é perder</b></span></h2>
+        <p class="st__p ln">A amizade com La Boétie não cobrava nada. Só existia. Montaigne viu ali o que acontece quando se ama alguém sem tentar possuí-lo.</p>
+      </article>
+
+      <article class="st st--hero" data-st="6">
+        <p class="mono st__num ln">VI — Soltar</p>
+        <h2 class="st__t"><span class="ln"><em class="sw">O que importa</em></span><span class="ln"><b>começa a florescer.</b></span></h2>
+        <p class="st__p ln">Quando você para de se importar com o que nunca importou, sobra espaço. Para falar com verdade, errar com coragem, viver sem pedir licença.</p>
+      </article>
+
+      <p class="mono cue" id="cue" aria-hidden="true">Role e deixe as pinturas irem embora</p>
+    </div>
+  </section>
+
+  <section class="core hold" id="segure" aria-labelledby="holdT">
+    <div class="core__stage">
+      <canvas id="coreGl" aria-hidden="true"></canvas>
+      <img class="core__flat" id="coreFlat" src="montaigne/img/paint/m05-punho.jpg" alt="" aria-hidden="true">
+      <h2 class="sr" id="holdT">Segure a pintura e depois solte</h2>
+      <article class="cap" data-k="0"><p class="mono">Uma experiência de dez segundos</p><h3><em class="sw">Segure.</em></h3><p>Clique e não solte. No celular, segure o botão.</p></article>
+      <article class="cap" data-k="1"><h3><em class="sw">Mais forte.</em></h3><p class="mono">veja o que acontece com o que você aperta</p></article>
+      <article class="cap cap--r" data-k="2"><h3><em class="sw">Agora,</em> solte.</h3></article>
+      <article class="cap cap--c" data-k="3"><h3>Ela só se abriu <em class="sw">quando você soltou.</em></h3></article>
+      <button class="hold__btn mono" id="holdBtn" type="button" aria-pressed="false"><span>Segure</span><i aria-hidden="true"></i></button>
+    </div>
+  </section>
+
+  <div class="page" id="page">
+    <div class="tear" aria-hidden="true"></div>
+
+    <section class="forte" id="soltar" aria-labelledby="soltarT">
+      <p class="mono kick">O que o vídeo pede</p>
+      <h2 class="big" id="soltarT"><em class="sw">Seis coisas</em> para soltar</h2>
+      <p class="lede">Montaigne não pede para você parar de se importar com tudo. Pede o contrário: separar o que merece sua energia do que só consome. Agir com dedicação, sem obsessão. Amar sem possessividade. Buscar sem se perder no caminho. Passe o dedo ou o mouse nas cartas.</p>
+      <div class="deck" id="deck">
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="montaigne/img/paint/m06-multidao.jpg" alt="" loading="lazy"><figcaption><span class="mono">I</span>A plateia</figcaption></div><div class="dc__b"><span class="mono">I · A plateia</span><p>Quem vive de aplauso entrega a chave de casa para estranhos.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="montaigne/img/paint/m05-punho.jpg" alt="" loading="lazy"><figcaption><span class="mono">II</span>O roteiro</figcaption></div><div class="dc__b"><span class="mono">II · O roteiro</span><p>A vida não é máquina para operar. É organismo, e floresce para quem aceita o imprevisto.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="montaigne/img/paint/m13-olhos.jpg" alt="" loading="lazy"><figcaption><span class="mono">III</span>A perfeição</figcaption></div><div class="dc__b"><span class="mono">III · A perfeição</span><p>Montaigne confessou as próprias vaidades e incoerências. Foi isso que o tornou universal.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="montaigne/img/paint/m11-casal.jpg" alt="" loading="lazy"><figcaption><span class="mono">IV</span>O outro</figcaption></div><div class="dc__b"><span class="mono">IV · O outro</span><p>Presença, não cobrança. Entrega, não domínio.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="montaigne/img/paint/m08-leitor.jpg" alt="" loading="lazy"><figcaption><span class="mono">V</span>A certeza</figcaption></div><div class="dc__b"><span class="mono">V · A certeza</span><p>“Que sais-je?” O que sei eu? A dúvida de Montaigne não paralisa. Ela desarma.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="montaigne/img/paint/m16-bracos.jpg" alt="" loading="lazy"><figcaption><span class="mono">VI</span>O medo</figcaption></div><div class="dc__b"><span class="mono">VI · O medo</span><p>O medo de falhar costuma ser o único obstáculo real entre você e o que quer viver.</p></div></div></figure>
+      </div>
+    </section>
+
+    <section class="quem" id="vida" aria-labelledby="vidaT">
+      <div class="quem__head">
+        <p class="mono kick">Antes da leveza</p>
+        <h2 class="big" id="vidaT"><em class="sw">Uma vida</em> que perdeu <em class="sw">quase</em> tudo</h2>
+      </div>
+      <ul class="cast" id="cast">
+        <li data-img="montaigne/img/cut/m17-retrato.webp"><span class="mono">1533</span><b>Nasce no Périgord</b><i>Filho de nobres, aprende latim antes do francês. É criado para ser alguém importante.</i></li>
+        <li data-img="montaigne/img/cut/m08-leitor.webp"><span class="mono">1563</span><b>Morre La Boétie</b><i>O melhor amigo. “Porque era ele, porque era eu”, Montaigne escreveria depois.</i></li>
+        <li data-img="montaigne/img/cut/m01-pano.webp"><span class="mono">1570s</span><b>As filhas</b><i>De seis filhos, só uma passa da infância. A dor não o deixa cínico. Deixa mais real.</i></li>
+        <li data-img="montaigne/img/cut/m09-horizonte.webp"><span class="mono">1571</span><b>A torre</b><i>Aos 38 anos, larga os cargos e sobe para a biblioteca. Começa o estudo de si mesmo.</i></li>
+        <li data-img="montaigne/img/cut/m02-montaigne.webp"><span class="mono">1580</span><b>Os Ensaios</b><i>Um livro sobre um homem comum, com fraquezas à mostra. Inventa um gênero.</i></li>
+        <li data-img="montaigne/img/cut/m16-bracos.webp"><span class="mono">1592</span><b>Morre em casa</b><i>Ainda reescrevendo. Nunca chegou a uma versão final, e não parecia se importar.</i></li>
+      </ul>
+      <img class="cast__peek" id="peek" alt="" aria-hidden="true">
+    </section>
+
+    <section class="pick" aria-labelledby="pickT">
+      <p class="mono kick">A pergunta do vídeo</p>
+      <h2 class="big" id="pickT">O que você <em class="sw">ainda</em> está <em class="sw">segurando?</em></h2>
+      <div class="pick__btns" role="group" aria-label="Escolha uma resposta">
+        <button type="button" class="pill" data-pick="o" aria-pressed="false">A opinião dos outros</button>
+        <button type="button" class="pill" data-pick="c" aria-pressed="false">O controle</button>
+        <button type="button" class="pill" data-pick="p" aria-pressed="false">Uma pessoa</button>
+        <button type="button" class="pill" data-pick="f" aria-pressed="false">O medo de errar</button>
+      </div>
+      <p class="pick__a" id="pickA" aria-live="polite"></p>
+    </section>
+
+    <section class="video" id="video" aria-labelledby="videoT">
+      <p class="mono kick">De onde tudo isto saiu</p>
+      <h2 class="big" id="videoT"><em class="sw">17 minutos</em> para soltar</h2>
+      <div class="frame">
+        <div class="player" id="player">
+          <button class="player__face" id="playerBtn" type="button" aria-label="Reproduzir o vídeo sobre Montaigne">
+            <img src="montaigne/img/paint/m17-retrato.jpg" alt="">
+            <span class="player__play" aria-hidden="true">▶</span>
+            <span class="mono player__cap">A Psique · 17 min<br>Quando você para de se importar</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <h2 class="foot__t"><em class="sw">Solte.</em> Fica o que é seu.</h2>
+      <blockquote class="foot__q"><p>“A maior coisa do mundo é saber pertencer a si mesmo.”</p><cite class="mono">Montaigne, Ensaios, livro I, cap. 39</cite></blockquote>
+      <a class="btn" href="https://www.youtube.com/watch?v=LWuZr9304Y4" target="_blank" rel="noopener"><span>Assistir ao vídeo</span><b aria-hidden="true">↗</b></a>
+      <div class="foot__cols">
+        <p><span class="mono">Vídeo</span>A Psique, sobre Michel de Montaigne</p>
+        <p><span class="mono">Livro</span>Ensaios, Michel de Montaigne, 1580</p>
+        <p><span class="mono">Imagens</span>As pinturas que o vídeo usa, recortadas e soltas no ar</p>
+        <p><span class="mono">Outros</span><a href="index.html">Voltar ao lobby dos paradoxos</a></p>
+      </div>
+      <a class="next" href="idiota.html"><img src="img/paint/p15-rua.jpg" alt="" loading="lazy"><span class="mono">Outro paradoxo · Dostoiévski</span><b><em class="sw">O Idiota.</em> Ser bom é suficiente num mundo que não é?</b><i aria-hidden="true">→</i></a>
+    </footer>
+  </div>
+</main>
+
+<script type="module" src="montaigne/src/main.js"></script>
+</body>
+</html>

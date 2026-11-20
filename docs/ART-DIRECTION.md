@@ -25,3 +25,13 @@
 - Antes da primeira trinca o quadro é liso e inteiro; a trinca acende em ouro e a luz vaza por trás.
 - Cerca de 600 cacos (alta) com cortes secundários, mais pó de vidro instanciado.
 - Pós próprio: bloom em meia resolução, tom fílmico ACES, aberração cromática leve e grão.
+
+## Montaigne — “Solte”
+- Lugar: madrugada fria (`#0a0d12`) que vira manhã de névoa (`#e4e1d8`) no fim. Acento damasco `#f0b48a` no lugar do ouro.
+- Passagem entre cenas: o vento descasca a pintura da esquerda para a direita em flocos de papel claro (sem fogo, sem brasa).
+- Final: os quadros soltos sobem e somem; a névoa clareia até a página.
+- Atração: segurar amassa a pintura (dobras, luz rasante, cor some); soltar desdobra com mola e a próxima pintura entra em flocos. O texto reage ao gesto: “Segure.” → “Mais forte.” → “Agora, solte.” → “Ela só se abriu quando você soltou.”
+- Som: Fá maior aberto; segurar fecha o filtro e traz vento; soltar toca um arpejo subindo.
+
+## Lobby
+- Fundo: a pintura da carta em foco, borrada. Cartas com três camadas (pintura, figura recortada saindo da moldura, título) e brilho que segue o cursor. Clique: a pintura cresce até cobrir a tela e escurece no tom do site.

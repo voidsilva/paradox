@@ -11,10 +11,12 @@ const FINAL = [38, 50, 54, 57, 62]; // Ré maior
 const MELODY = [74, 72, 69, 70, 69, 65, 67, 69, 62, 65, 64, 62];
 const hz = m => 440 * Math.pow(2, (m - 69) / 12);
 
-export function createSound() {
+export function createSound(opts = {}) {
+  const CH = opts.chords || CHORDS, FI = opts.final || FINAL, ME = opts.melody || MELODY;
+  const FIRE = opts.fire !== false, ROOT = opts.root ?? 38, LIGHT = opts.lightScene ?? 5;
   let ctx = null, master, wet, dry, comp, on = false, timer = 0;
   let step = 0, chordI = 0, melI = 0, nextChord = 0, nextNote = 0;
-  const st = { heat: 0, transit: 0, fin: 0, scene: 0, light: 0 };
+  const st = { heat: 0, transit: 0, fin: 0, scene: 0, light: 0, grip: 0 };
   let lastScene = -1, crackleNext = 0;
   let pad = [], drone = null, whoosh = null, padFilter;
 
@@ -46,7 +48,7 @@ export function createSound() {
     padFilter = ctx.createBiquadFilter(); padFilter.type = 'lowpass'; padFilter.frequency.value = 520; padFilter.Q.value = .6;
     const padGain = ctx.createGain(); padGain.gain.value = .085;
     padFilter.connect(padGain); padGain.connect(dry); padGain.connect(rv);
-    pad = CHORDS[0].map((m, i) => {
+    pad = CH[0].map((m, i) => {
       const g = ctx.createGain(); g.gain.value = 0; g.connect(padFilter);
       const oscs = [-7, 6].map(det => {
         const o = ctx.createOscillator(); o.type = i === 0 ? 'triangle' : 'sawtooth';
@@ -104,7 +106,7 @@ export function createSound() {
   }
 
   function bell(t) { // entrada de cena: um sino grave e distante
-    [[hz(38), .2], [hz(38) * 2.76, .06], [hz(38) * 5.4, .03]].forEach(([f, a]) => {
+    [[hz(ROOT), .2], [hz(ROOT) * 2.76, .06], [hz(ROOT) * 5.4, .03]].forEach(([f, a]) => {
       const o = ctx.createOscillator(); o.frequency.value = f; const g = ctx.createGain();
       g.gain.setValueAtTime(a, t); g.gain.exponentialRampToValueAtTime(.0001, t + 6);
       o.connect(g); g.connect(dry.rev); g.connect(dry); o.start(t); o.stop(t + 6);
@@ -116,24 +118,27 @@ export function createSound() {
     const t = ctx.currentTime;
     const finalMode = st.fin > .5;
     if (t >= nextChord) {
-      setChord(finalMode ? FINAL : CHORDS[chordI++ % CHORDS.length], t);
+      setChord(finalMode ? FI : CH[chordI++ % CH.length], t);
       nextChord = t + (finalMode ? 12 : 8);
     }
     if (t >= nextNote) {
-      const dense = st.scene === 5 ? 1.3 : 1;
-      if (Math.random() < .8) piano(MELODY[melI++ % MELODY.length] + (finalMode && MELODY[(melI - 1) % MELODY.length] % 12 === 5 ? 1 : 0), t, .35 + Math.random() * .3);
-      if (Math.random() < .3) piano(MELODY[(melI + 3) % MELODY.length] - 12, t + .02, .25);
+      const dense = (st.scene === LIGHT ? 1.3 : 1) * (1 - st.grip * .6);
+      if (Math.random() < .8) piano(ME[melI++ % ME.length] + (FIRE && finalMode && ME[(melI - 1) % ME.length] % 12 === 5 ? 1 : 0), t, .35 + Math.random() * .3);
+      if (Math.random() < .3) piano(ME[(melI + 3) % ME.length] - 12, t + .02, .25);
       nextNote = t + (1.6 + Math.random() * 1.6) / dense;
     }
     // cena nova = sino
     if (st.scene !== lastScene) { if (lastScene >= 0) bell(t + .05); lastScene = st.scene; }
     // cordas abrem com a luz e nas travessias
-    padFilter.frequency.setTargetAtTime(480 + st.transit * 900 + (st.scene === 5 ? 700 : 0) + st.fin * 500, t, .4);
-    whoosh.g.gain.setTargetAtTime(st.transit * .16, t, .25);
+    padFilter.frequency.setTargetAtTime((480 + st.transit * 900 + (st.scene === LIGHT ? 700 : 0) + st.fin * 500) * (1 - st.grip * .55), t, .4);
+    // segurar = as cordas desafinam e apertam
+    pad.forEach(v => v.oscs.forEach((o, j) => o.detune.setTargetAtTime((j ? 6 : -7) * (1 + st.grip * 7), t, .25)));
+    const wind = FIRE ? 0 : st.heat * .22;
+    whoosh.g.gain.setTargetAtTime(st.transit * .16 + wind + st.grip * .05, t, .25);
     whoosh.f.frequency.setTargetAtTime(300 + st.transit * 1400, t, .3);
-    drone.gain.setTargetAtTime(st.heat * .5 + (st.scene === 3 ? .12 : 0), t, .2);
+    drone.gain.setTargetAtTime(FIRE ? st.heat * .5 + (st.scene === 3 ? .12 : 0) : st.grip * .35, t, .2);
     // estalos do fogo
-    const rate = st.heat * 26 + (st.scene === 3 ? 4 : 0);
+    const rate = FIRE ? st.heat * 26 + (st.scene === 3 ? 4 : 0) : 0;
     while (rate > .5 && crackleNext < t + .12) {
       crack(Math.max(t, crackleNext), Math.min(1, st.heat + .3));
       crackleNext = Math.max(t, crackleNext) + (-Math.log(Math.random()) / rate);
@@ -158,5 +163,12 @@ export function createSound() {
       setTimeout(() => { if (!on) { clearInterval(timer); ctx.suspend(); } }, 1200);
     },
     update(o) { Object.assign(st, o); },
+    // soltar: um arpejo claro que sobe
+    release() {
+      if (!ctx || !on) return;
+      const t = ctx.currentTime;
+      FI.slice(1).concat(FI.slice(1).map(m => m + 12)).forEach((m, i) => piano(m + 12, t + i * .07, .32));
+      setChord(FI, t, 1);
+    },
   };
 }
