@@ -51,3 +51,6 @@
 
 ## v12 (varal)
 - O livro saiu. Montaigne agora é um varal na névoa clara (montaigne/src/varal.js): cada capítulo é uma pintura impressa em papel presa por dois prendedores. Quando o capítulo acaba, os prendedores saltam e o vento leva a folha; a câmera segue pelo fio até a próxima. Tudo é função da rolagem, então voltar devolve as folhas ao fio.
+
+## v13 (pó de pintura)
+- O varal saiu. Cada pintura é feita de ~85 mil grãos (montaigne/src/dust.js), cada um com a cor de um ponto do quadro. Na troca de capítulo, uma frente de vento varre da esquerda para a direita, solta os grãos numa corrente (curl noise), troca a cor no ar e pousa a próxima pintura. O cursor desprende grãos por onde passa. Letras dos títulos saem no mesmo vento, sem giros.

@@ -140,9 +140,9 @@ function reveal() {
   try { await document.fonts.ready; } catch (e) { /* segue */ }
   if (tier === 'off') { $('#gl').hidden = true; stage.classList.add('flat'); coreEl.classList.add('flat'); if (STILL) reveal(); else { clearInterval(picTimer); loader.classList.add('ready'); loadN.textContent = '27'; } return; }
   try {
-    const { createVaral } = await import('./varal.js');
+    const { createDust } = await import('./dust.js');
     const labels = $$('.st').map(el => { const n = $('.st__num', el); return n ? n.textContent.trim() : 'Prefácio — Quanto mais segura'; });
-    world = await createVaral({
+    world = await createDust({
       canvas: $('#gl'), tier, still: STILL, scenes: MONTAIGNE.scenes, labels, dir: MONTAIGNE.dir, asset,
       onProgress: v => { loadN.textContent = String(Math.round(v * 27)).padStart(2, '0'); },
     });
@@ -281,19 +281,20 @@ let fbCur = -1;
 
 // título: a letra chega como tinta que assenta e sai levada pelo vento, uma por uma, girando como papel solto
 function charStyle(chars, inN, outN) {
-  const N = chars.length, st = Math.min(.05, .8 / N);
+  const N = chars.length, st = Math.min(.035, .7 / N);
   chars.forEach((c, k) => {
-    const s = c._s || (c._s = [Math.random(), Math.random(), Math.random()]);
+    const s = c._s || (c._s = [Math.random(), Math.random()]);
     if (outN > 0) {
+      // o vento leva da esquerda para a direita, como o pó da pintura
       const po = easeIO(clamp(outN * (1 + N * st) - k * st));
-      const x = po * (70 + s[0] * 220), y = -po * (60 + s[1] * 160) + Math.sin(po * 6 + s[2] * 6) * 18 * po;
-      const r = po * (s[2] - .25) * 160;
-      c.style.transform = `translate3d(${x.toFixed(1)}%,${y.toFixed(1)}%,0) rotate(${r.toFixed(1)}deg) scale(${(1 - po * .35).toFixed(3)})`;
-      c.style.opacity = (1 - po * po).toFixed(3);
+      c.style.transform = `translate3d(${(po * (40 + s[0] * 60)).toFixed(1)}%,${(-po * (20 + s[1] * 50)).toFixed(1)}%,0)`;
+      c.style.opacity = (1 - po).toFixed(3);
+      c.style.filter = po > .02 ? `blur(${(po * 6).toFixed(1)}px)` : 'none';
     } else {
       const pi = easeOut(clamp(inN * (1 + N * st) - k * st));
-      c.style.transform = `translate3d(0,${(-(1 - pi) * 38).toFixed(1)}%,0) rotate(${((1 - pi) * (s[2] - .5) * 24).toFixed(1)}deg)`;
+      c.style.transform = `translate3d(0,${((1 - pi) * 55).toFixed(1)}%,0)`;
       c.style.opacity = pi.toFixed(3);
+      c.style.filter = pi < .98 ? `blur(${((1 - pi) * 5).toFixed(1)}px)` : 'none';
     }
   });
 }
