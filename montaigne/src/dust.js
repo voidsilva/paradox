@@ -174,7 +174,7 @@ export async function createDust({ canvas, tier = 'high', still = false, scenes,
   // ---------- enquadramento ----------
   // sx/sy deslocam o quadro na tela (fração da largura/altura); size = fração da largura que o quadro ocupa
   const SIDE = {
-    hero: { sx: .22, sy: .15, size: .43 },
+    hero: { sx: .22, sy: .1, size: .43 },
     l: { sx: .26, sy: 0, size: .42 },
     r: { sx: -.26, sy: 0, size: .42 },
     c: { sx: 0, sy: -.2, size: .4 },
@@ -220,7 +220,8 @@ export async function createDust({ canvas, tier = 'high', still = false, scenes,
     const sx = mix(a.sx, b.sx, fr), sy = mix(a.sy, b.sy, fr), size = mix(a.size, b.size, fr);
     const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), tanH = tanV * asp;
     let dist = (PW / 2) / (tanH * size);
-    if (asp < .9) dist = Math.max(dist, (PH / 2) / (tanV * .4));
+    // nunca mais alto que uma fração da tela (telas largas e baixas)
+    dist = Math.max(dist, (PH / 2) / (tanV * (asp < .9 ? .4 : .5)));
     camera.position.set(0, 0, dist);
     camera.lookAt(0, 0, 0);
     camera.setViewOffset(W_, H_, -sx * W_, sy * H_, W_, H_);

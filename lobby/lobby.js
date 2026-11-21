@@ -59,7 +59,7 @@ function go(id) {
   sound.enter();
   veil.style.background = TONE[id] || '#000';
   body.classList.add('leaving');
-  if (lobby && !RM) { lobby.enter(id); setTimeout(() => veil.classList.add('on'), 650); setTimeout(() => { location.href = href; }, 1350); }
+  if (lobby) { lobby.enter(id); setTimeout(() => veil.classList.add('on'), 650); setTimeout(() => { location.href = href; }, 1350); }
   else { veil.classList.add('on'); setTimeout(() => { location.href = href; }, 300); }
 }
 $$('.doors a').forEach(a => a.addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); go(a.dataset.id); }));

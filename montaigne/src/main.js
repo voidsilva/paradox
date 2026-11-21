@@ -11,7 +11,10 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const params = new URLSearchParams(location.search);
 const STILL = params.has('still');
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// O movimento aqui é guiado pela rolagem da própria pessoa; o Windows com "efeitos de animação" desligados
+// marca reduce e deixava a página quebrada. Só o projetor do carregamento (piscadas rápidas) respeita a preferência.
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced = false;
 const finePointer = matchMedia('(pointer: fine)').matches;
 const easeOut = x => 1 - Math.pow(1 - x, 3);
 const easeIO = x => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
@@ -111,7 +114,7 @@ let introP = STILL || reduced ? 1 : 0;
 // enquanto carrega, as pinturas passam como num projetor
 const LOAD_PICS = ['m17-retrato', 'm18-colina', 'm05-punho', 'm06-multidao', 'm10-torre', 'm13-olhos', 'm14-ela', 'm16-bracos', 'm09-horizonte', 'm15-praia'];
 let picI = 0;
-const picTimer = loadPic && !reduced && !STILL ? setInterval(() => { loadPic.src = asset('montaigne/img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.jpg'); }, 150) : 0;
+const picTimer = loadPic && !RM && !STILL ? setInterval(() => { loadPic.src = asset('montaigne/img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.jpg'); }, 150) : 0;
 
 function reveal() {
   clearInterval(picTimer);
@@ -129,7 +132,7 @@ function reveal() {
       if (introP > .55 && lenis && !lenis.__on) { lenis.__on = true; lenis.start(); }
     };
     requestAnimationFrame(step);
-  } else if (lenis) lenis.start();
+  } else { if (world) world.set({ intro: 1 }); if (lenis) lenis.start(); }
   onScroll();
   // enquanto há 3D, o texto acompanha a câmera a cada quadro
   const follow = () => { if (world) updateWorld(); requestAnimationFrame(follow); };
