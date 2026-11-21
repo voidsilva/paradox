@@ -93,11 +93,18 @@ async function init() {
   if (lobby && lobby.begin) lobby.begin();
   if (!lobby) return;
   // etiquetas presas às portas
+  const qs = {};
+  for (const id in tags) { const el = tags[id].querySelector('i.q'); if (el) qs[id] = { el, w: 0 }; }
+  addEventListener('resize', () => { for (const id in qs) qs[id].w = 0; });
+  document.fonts && document.fonts.ready.then(() => { for (const id in qs) qs[id].w = 0; });
   const place = () => {
     for (const id in tags) {
       const s = lobby.screen(id); if (!s) continue;
       const x = Math.min(innerWidth - 74, Math.max(74, s.x)), y = Math.min(innerHeight - 20, Math.max(90, s.y));
       tags[id].style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+      // a pergunta não pode sair da tela: desliza para dentro sem tirar a etiqueta da porta
+      const q = qs[id];
+      if (q) { q.w = q.w || q.el.offsetWidth; const off = Math.min(0, innerWidth - 14 - (x + q.w / 2)) + Math.max(0, 14 - (x - q.w / 2)); q.el.style.marginLeft = off.toFixed(1) + 'px'; }
     }
     if (!STILL) requestAnimationFrame(place);
   };

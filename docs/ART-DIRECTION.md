@@ -43,3 +43,8 @@
 - Cada porta tem duas folhas entreabertas; com o cursor elas se escancaram (a trancada só treme).
 - Uma lanterna quente segue o cursor, passa rasante pelas galerias e acende a poeira no ar.
 - Cada porta está numa gravidade (em pé, de lado). Brasas sobem da porta do Idiota; papéis voam da porta do Montaigne. O céu é metade brasa, metade névoa.
+
+## v11
+- Início: som todo gerado (lobby/sound.js), desligado até a pessoa tocar em "Som"; zumbido grave, brasa perto do Idiota, vento perto do Montaigne, sino quando o objeto fecha, sopro ao entrar. A escolha fica salva.
+- Início: cursor em anel que segue a mão e vira "Entrar" na cor da porta; a pergunta da porta desliza para dentro da tela no celular.
+- Montaigne: palco do livro mais alto (fundo .8, arco .96) e poeira dourada que só aparece dentro do feixe da janela (mesma função gobo do chão).
