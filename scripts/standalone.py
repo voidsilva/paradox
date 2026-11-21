@@ -63,5 +63,5 @@ build('index.html', {'lobby/lobby.js': 'lobby/lobby.js', 'lobby/world.js': 'lobb
       ['img/paint/p15-rua.jpg', 'img/cut/p01-retrato.webp', 'montaigne/img/paint/m15-praia.jpg', 'montaigne/img/cut/m09-horizonte.webp'])
 build('idiota.html', {'app/main.js': 'src/main.js', 'app/sound.js': 'src/sound.js', 'app/world/world.js': 'src/world/world.js', 'app/core/core.js': 'src/core/core.js'},
       ['img/paint', 'img/cut'], 'app/main.js')
-build('montaigne.html', {'app/main.js': 'montaigne/src/main.js', 'app/hold.js': 'montaigne/src/hold.js', 'app/book.js': 'montaigne/src/book.js', 'shared/sound.js': 'src/sound.js'},
+build('montaigne.html', {'app/main.js': 'montaigne/src/main.js', 'app/hold.js': 'montaigne/src/hold.js', 'app/varal.js': 'montaigne/src/varal.js', 'shared/sound.js': 'src/sound.js'},
       ['montaigne/img/paint', 'montaigne/img/cut'], 'app/main.js')

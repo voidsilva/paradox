@@ -140,12 +140,10 @@ function reveal() {
   try { await document.fonts.ready; } catch (e) { /* segue */ }
   if (tier === 'off') { $('#gl').hidden = true; stage.classList.add('flat'); coreEl.classList.add('flat'); if (STILL) reveal(); else { clearInterval(picTimer); loader.classList.add('ready'); loadN.textContent = '27'; } return; }
   try {
-    const { createBook } = await import('./book.js');
+    const { createVaral } = await import('./varal.js');
     const labels = $$('.st').map(el => { const n = $('.st__num', el); return n ? n.textContent.trim() : 'Prefácio — Quanto mais segura'; });
-    // o texto de cada cena também vai impresso na página do livro (lido antes de as letras serem quebradas)
-    const pages = $$('.st').map(el => ({ num: ($('.st__num', el) || {}).textContent || '', p: (($('.st__p', el) || {}).textContent || '').replace(/\s+/g, ' ') }));
-    world = await createBook({
-      canvas: $('#gl'), tier, still: STILL, scenes: MONTAIGNE.scenes, labels, pages, dir: MONTAIGNE.dir, asset,
+    world = await createVaral({
+      canvas: $('#gl'), tier, still: STILL, scenes: MONTAIGNE.scenes, labels, dir: MONTAIGNE.dir, asset,
       onProgress: v => { loadN.textContent = String(Math.round(v * 27)).padStart(2, '0'); },
     });
     window.__world = world;

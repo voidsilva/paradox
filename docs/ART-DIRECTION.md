@@ -48,3 +48,6 @@
 - Início: som todo gerado (lobby/sound.js), desligado até a pessoa tocar em "Som"; zumbido grave, brasa perto do Idiota, vento perto do Montaigne, sino quando o objeto fecha, sopro ao entrar. A escolha fica salva.
 - Início: cursor em anel que segue a mão e vira "Entrar" na cor da porta; a pergunta da porta desliza para dentro da tela no celular.
 - Montaigne: palco do livro mais alto (fundo .8, arco .96) e poeira dourada que só aparece dentro do feixe da janela (mesma função gobo do chão).
+
+## v12 (varal)
+- O livro saiu. Montaigne agora é um varal na névoa clara (montaigne/src/varal.js): cada capítulo é uma pintura impressa em papel presa por dois prendedores. Quando o capítulo acaba, os prendedores saltam e o vento leva a folha; a câmera segue pelo fio até a próxima. Tudo é função da rolagem, então voltar devolve as folhas ao fio.
