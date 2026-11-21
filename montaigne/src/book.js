@@ -319,8 +319,37 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
   const blankT = tex(blankC);
 
   const book = new THREE.Group(); scene.add(book);
+
   const fogC = FOG.clone();
   const fogU = { uFog: { value: fogC }, uL: { value: L }, uFogN: { value: 8 }, uFogF: { value: 18 }, uTime: { value: 0 } };
+
+  // poeira no feixe da janela: só aparece onde a luz passa
+  const NM = low ? 320 : 760;
+  const mP = new Float32Array(NM * 3), mR = new Float32Array(NM);
+  for (let i = 0; i < NM; i++) { mP.set([-1 + Math.random() * 4.6, .03 + Math.random() * 1.9, -1.3 + Math.random() * 2.6], i * 3); mR[i] = Math.random(); }
+  const mGeo = new THREE.BufferGeometry();
+  mGeo.setAttribute('position', new THREE.BufferAttribute(mP, 3));
+  mGeo.setAttribute('aR', new THREE.BufferAttribute(mR, 1));
+  const motesU = { uTime: fogU.uTime, uPx: { value: renderer.getPixelRatio() * (low ? 1 : 1.2) }, uFin: { value: 0 }, uH: { value: 800 } };
+  const motes = new THREE.Points(mGeo, new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, uniforms: motesU,
+    vertexShader: /* glsl */`attribute float aR; uniform float uTime, uPx, uFin, uH; varying float vA;
+      ${GOBO}
+      void main(){
+        vec3 p = position;
+        p.x += sin(uTime * .07 + aR * 31.) * .25 + uTime * .02 * (aR - .3);
+        p.y = .03 + mod(p.y + sin(uTime * .11 + aR * 17.) * .2 + uTime * .012 * (aR - .5), 1.9);
+        p.z += cos(uTime * .09 + aR * 23.) * .2;
+        p.x = -1. + mod(p.x + 1., 4.6);
+        float g = gobo(p, uTime);
+        vA = g * (.25 + .75 * aR) * (.55 + .45 * sin(uTime * (1. + aR) + aR * 50.)) * (1. - uFin);
+        vec4 mv = modelViewMatrix * vec4(p, 1.);
+        gl_PointSize = (.007 + aR * .012) * uH * uPx / -mv.z;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */`varying float vA; void main(){ float d = length(gl_PointCoord - .5); float a = smoothstep(.5, .1, d) * vA; if (a < .01) discard; gl_FragColor = vec4(1., .95, .8, min(1., a * 1.3)); }`,
+  }));
+  motes.frustumCulled = false; motes.renderOrder = 5; scene.add(motes);
 
   // ---------- capa (dura, gira inteira) ----------
   const cloth = new THREE.MeshLambertMaterial({ color: 0x6a2618 });
@@ -524,6 +553,7 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
     asp = W_ / H_;
     camera.aspect = asp; camera.fov = asp < .9 ? 34 : 26; camera.updateProjectionMatrix();
     renderer.setSize(W_, H_, false);
+    motesU.uH.value = H_ / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
   }
   resize();
   addEventListener('resize', resize);
@@ -631,6 +661,7 @@ export async function createBook({ canvas, tier = 'high', still = false, scenes,
     el = mix(1.2, el, intro);
     // final: sobe e se afasta, o branco toma tudo
     const fin = easeIO(st.fin);
+    motesU.uFin.value = fin;
     el += fin * .3; size *= 1 - fin * .3;
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * asp;
     let dist = half / (tanH * Math.max(.05, size));
