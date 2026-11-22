@@ -394,3 +394,21 @@ body.is-loading .rail { opacity: 0; }
 .rail__peek img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 2px; }
 .rail__peek figcaption { margin: 7px 2px 1px; color: var(--bone); }
 @media (max-width: 860px) { .rail__dot { display: none; } .rail { left: 0; right: 0; } .rail__bar { bottom: 0; height: 2px; } }
+
+/* ===== Final: o próximo paradoxo cresce até ocupar a tela ===== */
+.page section.outro { position: relative; height: 240vh; padding: 0; margin-top: 60px; }
+.outro__stick { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+.outro .next { position: absolute; inset: 0; margin: 0; min-height: 0; border-radius: 0; padding: var(--gut); display: grid; grid-template-columns: none; place-content: center; justify-items: center; text-align: center; gap: 18px; will-change: clip-path; }
+.outro .next img { transform: scale(calc(1.18 - var(--op, 0) * .14)); filter: brightness(calc(.5 + var(--op, 0) * .22)) saturate(calc(.85 + var(--op, 0) * .2)); transition: filter .3s; }
+.outro .next .mono { grid-column: auto; }
+.outro .next b { max-width: 20ch; font-size: clamp(34px, calc(3.6vw + var(--op, 0) * 3vw), 110px); }
+.outro .next i { width: 64px; height: 64px; }
+.outro .next:hover img { transform: scale(calc(1.2 - var(--op, 0) * .14)); }
+.outro__hint { position: absolute; left: 0; right: 0; bottom: clamp(40px, 8vh, 80px); margin: 0; display: grid; justify-items: center; gap: 12px; color: #f1ece4; opacity: 0; transform: translateY(10px); transition: opacity .6s var(--ease), transform .8s var(--ease); pointer-events: none; }
+.outro.full .outro__hint { opacity: .85; transform: none; }
+.outro__hint i { width: 120px; height: 1px; background: rgba(241, 236, 228, .3); position: relative; overflow: hidden; }
+.outro__hint i::after { content: ""; position: absolute; inset: 0; background: #f1ece4; transform: scaleX(0); transform-origin: 0 50%; }
+.outro.arm .outro__hint i::after { transform: scaleX(1); transition: transform 1.1s linear; }
+.hdr { transition: color .5s, opacity .5s; }
+body.outro-on .hdr, body.outro-on .rail { opacity: 0; pointer-events: none; }
+body.outro-on .hdr * { pointer-events: none; }

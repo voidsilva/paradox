@@ -173,6 +173,7 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
 .m .btn:hover { background: var(--gold); }
 .m .foot__cols p { font: 400 17px/1.4 var(--f-serif); }
 .m .next { border-radius: 2px; }
+.m .outro .next { border-radius: 0; }
 .m .next b { font: 300 clamp(30px, 3.6vw, 60px)/1 var(--f-serif); letter-spacing: -.01em; }
 
 @media (max-width: 860px) {

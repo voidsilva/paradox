@@ -40,7 +40,7 @@ function go(a, e) {
     const fly = document.createElement('div');
     fly.setAttribute('aria-hidden', 'true');
     const ins = `${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px`;
-    fly.style.cssText = `position:fixed;inset:0;z-index:199;pointer-events:none;background:#000 url("${img.currentSrc || img.src}") center/cover no-repeat;clip-path:inset(${ins} round 22px);transition:clip-path .9s cubic-bezier(.76,0,.24,1), filter .9s;filter:brightness(.55)`;
+    fly.style.cssText = `position:fixed;inset:0;z-index:199;pointer-events:none;background:#000 url("${img.currentSrc || img.src}") center/cover no-repeat;clip-path:${a.style.clipPath || `inset(${ins} round 22px)`};transition:clip-path .9s cubic-bezier(.76,0,.24,1), filter .9s;filter:brightness(.55)`;
     document.body.append(fly); made.push(fly);
     const v = veil(tone);
     const id = /montaigne/i.test(href) ? 'montaigne' : /idiota/i.test(href) ? 'idiota' : '';

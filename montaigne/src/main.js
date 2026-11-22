@@ -8,6 +8,8 @@ import Lenis from 'lenis';
 import { dissolve } from 'shared/entry.js';
 import { initSolte } from './solte.js';
 import { initRail } from 'shared/rail.js';
+import { initOutro } from 'shared/outro.js';
+initOutro(document.querySelector('.outro'));
 import 'shared/leave.js';
 import { createSound } from 'shared/sound.js';
 const $ = (s, r = document) => r.querySelector(s);

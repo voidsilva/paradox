@@ -9,6 +9,7 @@ import Lenis from 'lenis';
 import { dissolve } from './entry.js';
 import { initFire } from './fire.js';
 import { initRail } from './rail.js';
+import { initOutro } from './outro.js';
 import './leave.js';
 import { createSound } from 'app/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
@@ -408,6 +409,7 @@ $$('#cast li').forEach(li => {
 
 // atire no fogo
 initFire($('#fogo'));
+initOutro($('.outro'));
 
 // ---------- trilha de capítulos ----------
 {
