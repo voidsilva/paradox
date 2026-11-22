@@ -32,6 +32,9 @@ a { color: inherit; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 img { display: block; max-width: 100%; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+.page :focus-visible { outline-color: var(--ink); }
+.skip { position: fixed; z-index: 120; left: var(--gut); top: 12px; padding: 10px 16px; background: var(--bone); color: var(--night); border-radius: 999px; text-decoration: none; transform: translateY(-160%); transition: transform .3s; }
+.skip:focus-visible { transform: none; }
 
 .mono { font: 500 11px/1.4 var(--f-mono); text-transform: uppercase; letter-spacing: .06em; }
 .sw { font-family: var(--f-serif); font-style: italic; font-weight: 500; font-variation-settings: "opsz" 96; letter-spacing: -.02em; }
@@ -94,10 +97,11 @@ body.has-cur .cur { opacity: 1; }
 .hdr { position: fixed; z-index: 50; top: 0; left: 0; right: 0; display: flex; align-items: flex-start; justify-content: space-between; padding: 18px var(--gut); color: var(--bone); transition: color .5s; pointer-events: none; }
 .hdr > * { pointer-events: auto; }
 .hdr.on-page { color: var(--ink); background: linear-gradient(var(--paper) 55%, rgba(238,228,209,0)); }
-.hdr__mark { display: grid; grid-template-columns: auto auto; column-gap: 5px; align-items: baseline; text-decoration: none; line-height: .9; }
-.hdr__mark i { font: italic 500 34px/.8 var(--f-serif); grid-row: span 2; }
-.hdr__mark span { font: 700 19px/1 var(--f-sans); letter-spacing: -.03em; }
-.hdr__mark small { opacity: .7; font-size: 9.5px; }
+/* a marca: o P itálico encosta no resto da palavra, na mesma linha de base (como na tela de entrada) */
+.hdr__mark { display: grid; grid-template-columns: auto auto; justify-content: start; align-items: baseline; text-decoration: none; line-height: .9; }
+.hdr__mark i { font: italic 500 31px/.8 var(--f-serif); margin-right: .03em; }
+.hdr__mark span { font: 700 21px/1 var(--f-sans); letter-spacing: -.04em; }
+.hdr__mark small { grid-column: 1 / -1; margin-top: 5px; opacity: .7; font-size: 9.5px; }
 .hdr__nav { display: flex; gap: 26px; padding-top: 6px; }
 .hdr__nav a { text-decoration: none; position: relative; padding-bottom: 3px; }
 .hdr__nav a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: 0; height: 1px; background: currentColor; transition: right .45s var(--ease); }
@@ -122,8 +126,10 @@ body.has-cur .cur { opacity: 1; }
 .index.gone { opacity: 0; pointer-events: none; }
 
 /* ===== Ato 1 ===== */
-.world { position: relative; height: 820vh; }
-.stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: var(--night); }
+.world { position: relative; z-index: 2; height: 820vh; pointer-events: none; }
+.stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: var(--night); pointer-events: auto;
+  /* no fim, o palco sobe como uma cortina e a atração já está montada embaixo */
+  box-shadow: 0 30px 80px 20px var(--night); }
 #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .stage::before {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
@@ -156,7 +162,7 @@ body.has-cur .cur { opacity: 1; }
 
 /* ===== Ato 2: papel ===== */
 /* ===== Atração principal ===== */
-.core { position: relative; height: 560vh; background: var(--night); }
+.core { position: relative; height: 610vh; margin-top: -100svh; background: var(--night); }
 .core__stage { position: sticky; top: 0; height: 100svh; overflow: hidden;
   background: radial-gradient(60% 70% at 62% 48%, #2a170c 0%, #160d07 45%, var(--night) 80%); }
 .core__stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(90% 70% at 15% 90%, rgba(13, 9, 7, .7), transparent 60%); }
@@ -193,7 +199,7 @@ body.has-cur .cur { opacity: 1; }
 .page { position: relative; z-index: 3; background: var(--paper); color: var(--ink); margin-top: -1px; overflow-x: clip; }
 .tear { position: absolute; left: 0; right: 0; top: -38px; height: 40px; background: var(--paper); }
 .page section { padding: clamp(90px, 12vw, 170px) var(--gut) 0; }
-.kick { margin: 0 0 22px; color: var(--ember); }
+.kick { margin: 0 0 22px; color: #a3401f; } /* brasa mais funda: legível no papel (contraste AA) */
 .big { margin: 0; font: 700 clamp(48px, 7.4vw, 132px)/.88 var(--f-sans); font-stretch: 92%; letter-spacing: -.045em; max-width: 14ch; }
 .big .sw { font-weight: 400; font-size: 1.06em; }
 .lede { margin: 40px 0 0 auto; max-width: 30em; font: 400 clamp(21px, 2vw, 30px)/1.3 var(--f-serif); text-indent: 2.4em; }
@@ -299,8 +305,11 @@ body.has-cur .cur { opacity: 1; }
   .player__play { width: 72px; height: 72px; margin: -36px 0 0 -36px; font-size: 20px; }
 }
 
+/* Reduzir movimento: as transições curtas ficam (são elas que fazem o site parecer vivo);
+   param só os laços infinitos que se mexem sozinhos, sem a pessoa pedir */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition-duration: .01s !important; }
+  body::after, .pill--glow::after, .cue::before, .snd-on .hdr__snd i { animation: none !important; }
+  .snd-on .hdr__snd i { height: 9px; }
 }
 
 .btn, .pill, .player__play { transition: transform .4s var(--ease), background .3s, color .3s, translate .5s var(--ease); }

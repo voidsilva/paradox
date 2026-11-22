@@ -159,7 +159,7 @@ export async function createCore({ canvas, tier = 'high', still = false, asset =
   const camera = new THREE.PerspectiveCamera(30, 1, .1, 300);
   scene.environment = studioEnv(renderer);
 
-  const [tA, tB, tC] = await Promise.all(['p01-retrato', 'p16-olhar', 'p05-nastassia'].map(k => loadTex(asset('img/paint/' + k + '.jpg'))));
+  const [tA, tB, tC] = await Promise.all(['p01-retrato', 'p16-olhar', 'p05-nastassia'].map(k => loadTex(asset('img/paint/' + k + '.webp'))));
   const crop = (t, cx) => { const a = t.image.width / t.image.height, w = (W / H) / a; return new THREE.Vector4(Math.min(1 - w, Math.max(0, cx - w / 2)), 0, w, 1); };
 
   const uni = {

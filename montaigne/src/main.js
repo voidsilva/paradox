@@ -5,6 +5,7 @@
   Roteiro: 7 cenas que se soltam ao vento → "Segure" (a atração) → página clara.
 */
 import Lenis from 'lenis';
+import 'shared/leave.js';
 import { createSound } from 'shared/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -114,7 +115,7 @@ let introP = STILL || reduced ? 1 : 0;
 // enquanto carrega, as pinturas passam como num projetor
 const LOAD_PICS = ['m17-retrato', 'm18-colina', 'm05-punho', 'm06-multidao', 'm10-torre', 'm13-olhos', 'm14-ela', 'm16-bracos', 'm09-horizonte', 'm15-praia'];
 let picI = 0;
-const picTimer = loadPic && !RM && !STILL ? setInterval(() => { loadPic.src = asset('montaigne/img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.jpg'); }, 150) : 0;
+const picTimer = loadPic && !RM && !STILL ? setInterval(() => { loadPic.src = asset('montaigne/img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.webp'); }, 150) : 0;
 
 function reveal() {
   clearInterval(picTimer);
@@ -187,7 +188,8 @@ function setHold(v) {
 }
 function updateCore() {
   const r = coreEl.getBoundingClientRect();
-  const p = clamp(-r.top / (r.height - innerHeight));
+  // a seção começa debaixo do palco das cenas: a primeira meia tela é a cortina subindo
+  const p = clamp((-r.top - innerHeight * .5) / (r.height - innerHeight * 1.5));
   coreP = p;
   if (core) core.set({ p });
   if (holding && (r.top > innerHeight * .5 || r.bottom < innerHeight * .5)) setHold(false);
@@ -335,7 +337,7 @@ function updateWorld() {
     });
   }
   const cur = Math.min(LAST, Math.floor(u + .14));
-  if (!world && cur !== fbCur) { fbCur = cur; stage.style.backgroundImage = `url(${asset('montaigne/img/paint/' + FALLBACK[cur] + '.jpg')})`; }
+  if (!world && cur !== fbCur) { fbCur = cur; stage.style.backgroundImage = `url(${asset('montaigne/img/paint/' + FALLBACK[cur] + '.webp')})`; }
   idx.forEach((li, k) => li.classList.toggle('on', k === cur));
   indexEl.classList.toggle('gone', p >= .985);
   cue.style.opacity = u > .05 || introP < 1 ? 0 : 1;

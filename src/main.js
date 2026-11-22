@@ -6,12 +6,15 @@
   Roteiro: 7 cenas seguindo a narração do vídeo → página em papel com a "bondade forte".
 */
 import Lenis from 'lenis';
+import './leave.js';
 import { createSound } from 'app/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const params = new URLSearchParams(location.search);
 const STILL = params.has('still');
+// "Reduzir movimento" (Windows com efeitos de animação desligados): tudo que segue a rolagem da própria pessoa
+// continua; saem só a inércia da rolagem, o projetor que pisca, a distorção pela velocidade e os botões magnéticos.
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer = matchMedia('(pointer: fine)').matches;
 const easeOut = x => 1 - Math.pow(1 - x, 3);
@@ -91,12 +94,12 @@ const tier = detectTier();
 // ---------- carregamento ----------
 const loader = $('#loader'), loadN = $('#loadN'), loadPic = $('#loadPic');
 let world = null;
-let introP = STILL || reduced ? 1 : 0;
+let introP = STILL ? 1 : 0;
 
 // enquanto carrega, as pinturas passam como num projetor
 const LOAD_PICS = ['p15-rua', 'p01-retrato', 'p09-caveira', 'p03-trem', 'p06-salao', 'p05-nastassia', 'p12-angustia', 'p07-flor', 'p19-brinde', 'p20-duas'];
 let picI = 0;
-const picTimer = loadPic && !reduced && !STILL ? setInterval(() => { loadPic.src = asset('img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.jpg'); }, 150) : 0;
+const picTimer = loadPic && !reduced && !STILL ? setInterval(() => { loadPic.src = asset('img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.webp'); }, 150) : 0;
 
 function reveal() {
   clearInterval(picTimer);
@@ -163,7 +166,8 @@ async function initCore() {
 }
 function updateCore() {
   const r = coreEl.getBoundingClientRect();
-  const p = clamp(-r.top / (r.height - innerHeight));
+  // a seção começa debaixo do palco das cenas: a primeira meia tela é a cortina subindo
+  const p = clamp((-r.top - innerHeight * .5) / (r.height - innerHeight * 1.5));
   coreP = p;
   if (core) core.set({ p });
   caps.forEach((c, k) => c.classList.toggle('on', p >= CAP_WIN[k][0] && p < CAP_WIN[k][1]));
@@ -172,7 +176,7 @@ function updateCore() {
   coreHeat = r.top < innerHeight && r.bottom > 0 ? heat : 0;
   if (!core) {
     const k = CAP_WIN.findIndex(([a, b]) => p >= a - .04 && p < b);
-    const img = asset('img/paint/' + FLAT_IMG[Math.max(0, k)] + '.jpg');
+    const img = asset('img/paint/' + FLAT_IMG[Math.max(0, k)] + '.webp');
     if (coreFlat.dataset.k !== img) { coreFlat.dataset.k = img; coreFlat.src = img; }
     coreFlat.style.opacity = p > .86 ? 0 : 1;
   }
@@ -231,7 +235,7 @@ addEventListener('pointermove', e => {
 const worldEl = $('#world');
 const sts = $$('.st').map(el => ({
   el, i: +el.dataset.st,
-  lines: $$('.ln', el).map(ln => ({ el: ln, chars: ln.closest('.st__t') && !reduced ? splitChars(ln) : null })),
+  lines: $$('.ln', el).map(ln => ({ el: ln, chars: ln.closest('.st__t') ? splitChars(ln) : null })),
 }));
 const LAST = 6, SPAN = 6.6;
 const idx = $$('#index li'), indexEl = $('#index');
@@ -255,7 +259,6 @@ function charStyle(chars, inN, outN) {
 }
 
 function lineStyle(el, inN, outN) {
-  if (reduced) { el.style.opacity = Math.min(inN, 1 - outN); return; }
   let o, y, b;
   if (outN > 0) { o = 1 - outN; y = -outN * 50; b = outN * 8; }
   else { const e = 1 - inN; o = inN; y = e * 90; b = e * 10; }
@@ -287,7 +290,7 @@ function updateWorld() {
     });
   }
   const cur = Math.min(LAST, Math.floor(u + .14));
-  if (!world && cur !== fbCur) { fbCur = cur; stage.style.backgroundImage = `url(${asset('img/paint/' + FALLBACK[cur] + '.jpg')})`; }
+  if (!world && cur !== fbCur) { fbCur = cur; stage.style.backgroundImage = `url(${asset('img/paint/' + FALLBACK[cur] + '.webp')})`; }
   idx.forEach((li, k) => li.classList.toggle('on', k === cur));
   indexEl.classList.toggle('gone', p >= .985);
   cue.style.opacity = u > .05 || introP < 1 ? 0 : 1;
@@ -317,7 +320,7 @@ $$('.foot__cols p').forEach((p, k) => p.style.setProperty('--d', k * 90 + 'ms'))
 const seen = new IntersectionObserver(es => es.forEach(e => {
   if (e.isIntersecting) { e.target.classList.add('in'); seen.unobserve(e.target); }
 }), { rootMargin: '0px 0px -10% 0px' });
-$$('.rv, .up').forEach(e => (reduced || STILL ? e.classList.add('in') : seen.observe(e)));
+$$('.rv, .up').forEach(e => (STILL ? e.classList.add('in') : seen.observe(e)));
 
 // parágrafo que acende palavra por palavra com a rolagem
 const lede = $('.lede'), ledeWords = splitWords(lede);
@@ -328,15 +331,15 @@ function updatePage() {
   const page = $('#page').getBoundingClientRect();
   hdr.classList.toggle('on-page', page.top < 40);
   const lr = lede.getBoundingClientRect();
-  const lp = reduced ? 1 : clamp((innerHeight * .85 - lr.top) / (lr.height + innerHeight * .3));
+  const lp = clamp((innerHeight * .85 - lr.top) / (lr.height + innerHeight * .3));
   const lit = lp * (ledeWords.length + 3);
   ledeWords.forEach((w, k) => { w.style.opacity = (.14 + .86 * clamp(lit - k)).toFixed(2); });
   const fr = frame.getBoundingClientRect();
-  const fp = reduced ? 1 : easeOut(clamp((innerHeight - fr.top) / (innerHeight * .75)));
+  const fp = easeOut(clamp((innerHeight - fr.top) / (innerHeight * .75)));
   frame.style.clipPath = `inset(${((1 - fp) * 12).toFixed(2)}% ${((1 - fp) * 16).toFixed(2)}% round ${(6 + (1 - fp) * 30).toFixed(1)}px)`;
   if (frameImg) frameImg.style.scale = (1 + (1 - fp) * .3).toFixed(3);
   const d = deck.getBoundingClientRect();
-  const open = reduced ? 1 : clamp((innerHeight * .95 - d.top) / (innerHeight * .6));
+  const open = clamp((innerHeight * .95 - d.top) / (innerHeight * .6));
   deck.style.setProperty('--open', open.toFixed(3));
 }
 
@@ -356,7 +359,7 @@ addEventListener('resize', onScroll);
 onScroll();
 
 // cursor: ponto + anel que cresce sobre o que é clicável
-if (finePointer && !reduced && !STILL) {
+if (finePointer && !STILL) {
   const dot = document.createElement('div'), ring = document.createElement('div');
   dot.className = 'cur'; ring.className = 'cur cur--ring';
   document.body.append(dot, ring);
@@ -375,7 +378,7 @@ if (finePointer && !reduced && !STILL) {
   };
   follow();
   // botões magnéticos
-  $$('.btn, .pill, .player__play').forEach(b => {
+  if (!reduced) $$('.btn, .pill, .player__play').forEach(b => {
     const host = b.classList.contains('player__play') ? b.parentElement : b;
     host.addEventListener('pointermove', e => {
       const r = b.getBoundingClientRect();

@@ -132,7 +132,7 @@ export async function createDust({ canvas, tier = 'high', still = false, scenes,
   const TW = 512, TH = 320;
   let done = 0;
   const texs = await Promise.all(scenes.map(async s => {
-    const img = await loadImg(asset(dir + 'paint/' + s.bg + '.jpg'));
+    const img = await loadImg(asset(dir + 'paint/' + s.bg + '.webp'));
     const c = document.createElement('canvas'); c.width = TW; c.height = TH;
     const g = c.getContext('2d');
     const r = Math.max(TW / img.width, TH / img.height), sw = TW / r, sh = TH / r;
@@ -179,7 +179,8 @@ export async function createDust({ canvas, tier = 'high', still = false, scenes,
     r: { sx: -.26, sy: 0, size: .42 },
     c: { sx: 0, sy: -.2, size: .4 },
   };
-  const MOB = { sx: 0, sy: .19, size: .92 };
+  // celular: a pintura vai de borda a borda e desce para perto do texto (antes sobrava um vazio no meio)
+  const MOB = { sx: 0, sy: .12, size: 1.04 };
   const kinds = scenes.map(s => s.side || 'c');
   let W_ = 1, H_ = 1, asp = 1;
   const key = i => (asp < .9 ? MOB : SIDE[kinds[clamp(i, 0, LAST)]] || SIDE.c);

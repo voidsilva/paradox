@@ -83,7 +83,7 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
 .m .st__t--list .sw { color: var(--gold); }
 
 /* ===== Segure ===== */
-.core.hold { height: 420vh; background: var(--night); }
+.core.hold { height: 470vh; background: var(--night); }
 .hold .core__stage { background: radial-gradient(70% 70% at 50% 46%, #f4f1ea 0%, #e9e5dc 50%, var(--night) 85%); }
 .hold .core__stage::after { background: none; }
 /* quanto mais aperta, mais a sala escurece em volta */
