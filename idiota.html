@@ -178,6 +178,25 @@
       <p class="pick__a" id="pickA" aria-live="polite"></p>
     </section>
 
+    <section class="fogo" id="fogo" aria-labelledby="fogoT">
+      <canvas class="fogo__fire" aria-hidden="true"></canvas>
+      <div class="fogo__head">
+        <p class="mono kick">Cem mil rublos</p>
+        <h2 class="big" id="fogoT">Atire <em class="sw">no fogo</em></h2>
+        <p class="fogo__lede">Nastássia jogou o dinheiro na lareira e disse a Gánia que era dele, se tirasse com as mãos. Escreva na nota o que você não venderia por nada. Depois arraste a nota até o fogo.</p>
+        <form class="fogo__form" autocomplete="off">
+          <label class="mono" for="fogoIn">O que não está à venda</label>
+          <input id="fogoIn" name="fogo" maxlength="34" placeholder="minha palavra" spellcheck="false">
+        </form>
+      </div>
+      <div class="fogo__note" tabindex="0" role="button" aria-label="Nota de cem mil rublos com o que você escreveu. Arraste até o fogo, ou aperte Enter para atirar."><canvas></canvas></div>
+      <button class="pill fogo__btn" type="button">Atirar no fogo</button>
+      <div class="fogo__out">
+        <p class="fogo__end" aria-live="polite"></p>
+        <button class="fogo__again mono" type="button" hidden>Escrever outra nota</button>
+      </div>
+    </section>
+
     <section class="video" id="video" aria-labelledby="videoT">
       <p class="mono kick">De onde tudo isto saiu</p>
       <h2 class="big" id="videoT"><em class="sw">23 minutos</em> que incomodam</h2>

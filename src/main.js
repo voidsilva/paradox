@@ -7,6 +7,7 @@
 */
 import Lenis from 'lenis';
 import { dissolve } from './entry.js';
+import { initFire } from './fire.js';
 import './leave.js';
 import { createSound } from 'app/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
@@ -308,6 +309,7 @@ function updateWorld() {
   while (x < 100) { pts.push(`${x.toFixed(2)}% ${(30 + Math.random() * 70).toFixed(1)}%`); x += .6 + Math.random() * 1.8; }
   pts.push('100% 60%', '100% 100%', '0% 100%');
   $('.tear').style.clipPath = `polygon(${pts.join(',')})`;
+  $('#fogo').style.setProperty('--tear-clip', `polygon(${pts.join(',')})`);
 }
 
 const deck = $('#deck'), cards = $$('.dc', deck);
@@ -334,7 +336,9 @@ const frame = $('.frame'), frameImg = $('.player__face img');
 
 function updatePage() {
   const page = $('#page').getBoundingClientRect();
-  hdr.classList.toggle('on-page', page.top < 40);
+  // sobre a lareira o cabeçalho volta a ser claro sobre escuro
+  const fg = $('#fogo').getBoundingClientRect();
+  hdr.classList.toggle('on-page', page.top < 40 && !(fg.top < 40 && fg.bottom > 40));
   const lr = lede.getBoundingClientRect();
   const lp = clamp((innerHeight * .85 - lr.top) / (lr.height + innerHeight * .3));
   const lit = lp * (ledeWords.length + 3);
@@ -400,6 +404,9 @@ $$('#cast li').forEach(li => {
   li.addEventListener('pointerleave', () => peek.classList.remove('on'));
   li.addEventListener('pointermove', e => { peek.style.left = e.clientX + 'px'; peek.style.top = e.clientY + 'px'; });
 });
+
+// atire no fogo
+initFire($('#fogo'));
 
 // a pergunta do vídeo
 const ANS = {
