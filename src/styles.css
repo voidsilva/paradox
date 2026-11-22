@@ -375,3 +375,22 @@ body.has-cur .cur { opacity: 1; }
   .fogo__btn { grid-row: 3; }
   .fogo__out { bottom: 34%; }
 }
+
+/* ===== Trilha de capítulos ===== */
+.rail { --rc: var(--bone); position: fixed; z-index: 44; left: var(--gut); right: var(--gut); bottom: 0; height: 34px; pointer-events: none; transition: opacity .6s var(--ease); }
+body.is-loading .rail { opacity: 0; }
+.rail.light { --rc: var(--ink); }
+.rail__bar { position: absolute; left: 0; right: 0; bottom: 12px; height: 1px; background: color-mix(in srgb, var(--rc) 22%, transparent); }
+.rail__bar b { position: absolute; inset: 0; background: var(--gold); transform-origin: 0 50%; transform: scaleX(0); }
+.rail__dot { position: absolute; bottom: 4px; width: 18px; height: 18px; margin-left: -9px; display: grid; place-items: center; pointer-events: auto; border-radius: 50%; }
+.rail__dot::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--rc); opacity: .45; transition: transform .35s var(--ease), opacity .3s, background .3s; }
+.rail__dot.past::before { background: var(--gold); opacity: .9; }
+.rail__dot.on::before { background: var(--gold); opacity: 1; transform: scale(1.7); }
+.rail__dot:hover::before, .rail__dot:focus-visible::before { opacity: 1; transform: scale(2); }
+.rail__dot span { position: absolute; bottom: 20px; color: var(--rc); opacity: 0; transform: translateY(4px); transition: opacity .3s, transform .4s var(--ease); font-size: 9.5px; pointer-events: none; }
+.rail:hover .rail__dot span, .rail__dot:focus-visible span { opacity: .7; transform: none; }
+.rail__peek { position: absolute; bottom: 52px; width: 190px; margin: 0 0 0 -95px; padding: 6px; background: var(--night); border-radius: 4px; box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .7); opacity: 0; transform: translateY(10px) scale(.96); transform-origin: 50% 100%; transition: opacity .3s, transform .45s var(--ease), left .45s var(--ease); pointer-events: none; }
+.rail.peeking .rail__peek { opacity: 1; transform: none; }
+.rail__peek img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 2px; }
+.rail__peek figcaption { margin: 7px 2px 1px; color: var(--bone); }
+@media (max-width: 860px) { .rail__dot { display: none; } .rail { left: 0; right: 0; } .rail__bar { bottom: 0; height: 2px; } }

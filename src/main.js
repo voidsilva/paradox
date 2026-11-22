@@ -8,6 +8,7 @@
 import Lenis from 'lenis';
 import { dissolve } from './entry.js';
 import { initFire } from './fire.js';
+import { initRail } from './rail.js';
 import './leave.js';
 import { createSound } from 'app/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
@@ -407,6 +408,20 @@ $$('#cast li').forEach(li => {
 
 // atire no fogo
 initFire($('#fogo'));
+
+// ---------- trilha de capítulos ----------
+{
+  const top = el => el.getBoundingClientRect().top + scrollY;
+  const sceneY = i => top(worldEl) + (i ? (i + .02) / SPAN : 0) * (worldEl.offsetHeight - innerHeight);
+  const labels = $$('#index li span').map(s => s.textContent.trim());
+  const items = FALLBACK.map((bg, i) => ({ label: labels[i] || `Cena ${i}`, img: 'img/paint/' + bg + '.webp', y: () => sceneY(i) }))
+    .concat([['#core', 'O retrato que quebra', 'img/paint/p01-retrato.webp'], ['#forte', 'A bondade forte', 'img/paint/p02-dostoievski.webp'], ['#quem', 'Quem é quem', 'img/paint/p05-nastassia.webp'], ['#fogo', 'Atire no fogo', 'img/paint/p06-salao.webp'], ['#video', 'O vídeo', 'img/paint/p01-retrato.webp']].map(([sel, label, img]) => ({ label, img, y: () => top($(sel)) + (sel === '#core' ? innerHeight * .6 : 0) })));
+  initRail({
+    items, asset,
+    go: y => { if (lenis) lenis.scrollTo(y, { duration: 1.8 }); else scrollTo({ top: y, behavior: 'instant' }); },
+    light: () => { const pg = $('#page').getBoundingClientRect(), fg = $('#fogo').getBoundingClientRect(); return pg.top < innerHeight - 20 && !(fg.top < innerHeight - 20 && fg.bottom > innerHeight - 20); },
+  });
+}
 
 // a pergunta do vídeo
 const ANS = {

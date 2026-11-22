@@ -7,6 +7,7 @@
 import Lenis from 'lenis';
 import { dissolve } from 'shared/entry.js';
 import { initSolte } from './solte.js';
+import { initRail } from 'shared/rail.js';
 import 'shared/leave.js';
 import { createSound } from 'shared/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
@@ -457,6 +458,21 @@ const ANS = {
   p: 'La Boétie não pedia nada a ele, e por isso Montaigne nunca o esqueceu. Quanto mais você segura alguém, mais essa pessoa se afasta. Presença sem cobrança é o que fica.',
   f: 'Ensaio quer dizer tentativa. Montaigne reescreveu o livro até morrer e nunca o deu por pronto. O erro não era o fim do trabalho. Era o trabalho.',
 };
+
+// ---------- trilha de capítulos ----------
+{
+  const top = el => el.getBoundingClientRect().top + scrollY;
+  const sceneY = i => top(worldEl) + (i ? (i + .02) / SPAN : 0) * (worldEl.offsetHeight - innerHeight);
+  const labels = $$('#index li span').map(s => s.textContent.trim());
+  const items = FALLBACK.map((bg, i) => ({ label: labels[i] || `Cena ${i}`, img: 'montaigne/img/paint/' + bg + '.webp', y: () => sceneY(i) }))
+    .concat([['#segure', 'Segure', 'montaigne/img/paint/m05-punho.webp'], ['#soltar', 'Seis coisas para soltar', 'montaigne/img/paint/m06-multidao.webp'], ['#vida', 'A vida dele', 'montaigne/img/paint/m10-torre.webp'], ['.pick', 'Segure e solte', 'montaigne/img/paint/m16-bracos.webp'], ['#video', 'O vídeo', 'montaigne/img/paint/m17-retrato.webp']].map(([sel, label, img]) => ({ label, img, y: () => top($(sel)) + (sel === '#segure' ? innerHeight * .6 : 0) })));
+  initRail({
+    items, asset,
+    go: y => { if (lenis) lenis.scrollTo(y, { duration: 1.8 }); else scrollTo({ top: y, behavior: 'instant' }); },
+    light: () => true,
+  });
+}
+
 // o que a pessoa escolhe (ou escreve) vira tinta em grãos; a resposta só aparece depois de soltar
 const pickA = $('#pickA'), solteIn = $('#solteIn');
 let pickKey = '';
