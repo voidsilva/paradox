@@ -389,9 +389,10 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   const rt = new THREE.WebGLRenderTarget(2, 2, { samples: HIGH ? 4 : 0 });
   const post = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false,
-    uniforms: { tD: { value: rt.texture }, uCA: { value: 0 }, uWarp: { value: 0 }, uHaze: { value: 0 }, uTime: { value: 0 }, uFlash: { value: 0 }, uWind: { value: WIND ? 1 : 0 } },
+    uniforms: { tD: { value: rt.texture }, uCA: { value: 0 }, uWarp: { value: 0 }, uHaze: { value: 0 }, uTime: { value: 0 }, uFlash: { value: 0 }, uWind: { value: WIND ? 1 : 0 },
+      uCandle: { value: new THREE.Vector2(.3, .35) }, uCandleA: { value: 0 }, uMatch: { value: 1 }, uAsp: { value: 1 } },
     vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }`,
-    fragmentShader: `uniform sampler2D tD; uniform float uCA, uWarp, uHaze, uTime, uFlash, uWind; varying vec2 vUv;
+    fragmentShader: `uniform sampler2D tD; uniform float uCA, uWarp, uHaze, uTime, uFlash, uWind, uCandleA, uMatch, uAsp; uniform vec2 uCandle; varying vec2 vUv;
       void main(){
         vec2 d = vUv - .5; float r2 = dot(d, d);
         vec2 uv = .5 + d * (1. - uWarp * r2 * .5);
@@ -402,6 +403,16 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
         float vg = smoothstep(.18, .75, r2);
         c = mix(c * (1. - vg * .55), mix(c, vec3(.9, .89, .86), vg * .55), uWind);
         c += mix(vec3(1., .5, .2), vec3(.9, .85, .8), uWind) * uHaze * .06 * (1. - r2 * 2.);
+        // vela: na noite de Petersburgo só se vê o que a chama alcança. Ela tremula e segue a mão;
+        // na abertura nasce de um fósforo riscado e cresce até iluminar a sala.
+        if (uCandleA > .001) {
+          vec2 lp = (vUv - uCandle) * vec2(uAsp, 1.);
+          float fl = .9 + .06 * sin(uTime * 11.3) + .04 * sin(uTime * 23.7 + 1.3) + .03 * sin(uTime * 3.1);
+          float L = exp(-dot(lp, lp) * mix(60., 2.4, uMatch) / fl);
+          float base = mix(0., .36, uMatch);
+          c *= mix(1., base + (1.2 - base) * L, uCandleA);
+          c += vec3(1., .5, .16) * L * L * uCandleA * (.05 + (1. - uMatch) * .5) * fl;
+        }
         c = mix(c, vec3(1., .94, .84), uFlash);
         gl_FragColor = vec4(c, 1.); }`,
   }));
@@ -410,9 +421,10 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
   const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
   // ---------- câmera ----------
-  const state = { u: 0, mx: 0, my: 0, vel: 0, intro: 1 };
+  const state = { u: 0, mx: 0, my: 0, vel: 0, intro: 1, ptrT: -99 };
   const cur = { u: 0, mx: 0, my: 0, vel: 0, intro: 1 };
   const light = new THREE.Vector2(.5, .5);
+  const candle = new THREE.Vector2(.3, .35);
   const stats = { heat: 0, transit: 0, fin: 0, scene: 0 };
   // fogo com tempo próprio: cada pintura leva BURN_T segundos para queimar,
   // e a câmera só atravessa quando o fogo já abriu passagem
@@ -427,6 +439,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     const pr = renderer.getPixelRatio();
     rt.setSize(Math.round(w * pr), Math.round(h * pr));
     camera.aspect = w / h;
+    post.material.uniforms.uAsp.value = w / h;
     mobile = w / h < .85;
     baseFov = mobile ? 39 : 38;
     camera.fov = baseFov;
@@ -500,7 +513,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     light.set(.5 + cur.mx * .45, .5 + cur.my * .45);
 
     const bend = clamp(cur.vel * .035, -2.2, 2.2);
-    const shift = Math.min(.012, Math.abs(cur.vel) * .00025);
+    const shift = Math.min(.0035, Math.abs(cur.vel) * .00008);
 
     // cenas: atravessar a pintura = ela se desfaz ao chegar perto
     let hot = 0, hotZ = 0, hotX = 0, hotW = 30;
@@ -569,7 +582,19 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
 
     const pu = post.material.uniforms;
     const tr = Math.sin(c.t * Math.PI);
-    pu.uCA.value = Math.min(.03, Math.abs(cur.vel) * .0006) + tr * .014 + ie * .011;
+    pu.uCA.value = Math.min(.01, Math.abs(cur.vel) * .00025) + tr * .007 + ie * .006;
+    // vela: segue o ponteiro; sem ponteiro (celular parado) ela vagueia devagar pela tela
+    const idle = clamp((time - state.ptrT - 2.5) / 2);
+    const tx = (.5 + state.mx * .5) * (1 - idle) + (.5 + Math.sin(time * .21) * .2) * idle;
+    const ty = (.5 + state.my * .5) * (1 - idle) + (.48 + Math.sin(time * .17 + 1) * .12) * idle;
+    const ck = snap ? 1 : 1 - Math.pow(.02, dt);
+    // na abertura a chama nasce perto do título
+    const mt = cur.intro;
+    candle.x += ((mobile ? .3 : .28) * (1 - mt) + tx * mt - candle.x) * (mt < 1 ? 1 : ck);
+    candle.y += ((mobile ? .22 : .3) * (1 - mt) + ty * mt - candle.y) * (mt < 1 ? 1 : ck);
+    pu.uCandle.value.copy(candle);
+    pu.uMatch.value = Math.min(1, cur.intro * 1.15);
+    pu.uCandleA.value = WIND ? 0 : clamp(1 - hot * 1.6) * (1 - fe) * (1 - tr * .7);
     pu.uWarp.value = tr * .9 + ie * .6 + fe * (1 - fe) * 1.2;
     pu.uHaze.value = hot;
     pu.uTime.value = time;
@@ -602,7 +627,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     stats,
     scenes: SCENES.length,
     set(o) { Object.assign(state, o); },
-    pointer(x, y) { state.mx = x; state.my = y; },
+    pointer(x, y) { state.mx = x; state.my = y; state.ptrT = time; },
     kick(v) { state.vel = v; },
     settle() { state.vel = 0; cur.vel = 0; frame(0, true); frame(0, true); },
     start, stop, resize,

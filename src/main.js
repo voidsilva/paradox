@@ -12,6 +12,7 @@ import { initRail } from './rail.js';
 import { initOutro } from './outro.js';
 import './leave.js';
 import { createSound } from 'app/sound.js';
+import { ignite } from 'app/ignite.js';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -127,7 +128,10 @@ function reveal() {
   } else if (lenis) lenis.start();
   onScroll();
   // enquanto há 3D, o texto acompanha a câmera a cada quadro
-  const follow = () => { if (world) updateWorld(); requestAnimationFrame(follow); };
+  const follow = () => {
+    if (world) { const r = worldEl.getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight) updateWorld(); }
+    requestAnimationFrame(follow);
+  };
   if (world && !STILL) requestAnimationFrame(follow);
 }
 
@@ -245,6 +249,7 @@ const sts = $$('.st').map(el => ({
   el, i: +el.dataset.st,
   lines: $$('.ln', el).map(ln => ({ el: ln, chars: ln.closest('.st__t') ? splitChars(ln) : null })),
 }));
+sts.forEach(s => s.lines.forEach(ln => ln.chars && prepChars(ln.chars)));
 const LAST = 6, SPAN = 6.6;
 const idx = $$('#index li'), indexEl = $('#index');
 const hdr = $('#hdr'), cue = $('#cue');
@@ -254,15 +259,49 @@ const FALLBACK = ['p15-rua', 'p09-caveira', 'p03-trem', 'p06-salao', 'p12-angust
 const stage = $('.stage');
 let fbCur = -1;
 
-// título: cada letra sobe por trás de uma máscara e sai por cima, em onda
+// título: as letras se acendem como brasa que esfria até a cor do texto;
+// na saída o fogo pega a palavra a partir de um ponto, cada letra fica em brasa,
+// carboniza e sobe como cinza.
+const EMBER = [255, 150, 64], CHAR = [34, 20, 12];
+const mixC = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+function prepChars(chars) {
+  const N = chars.length, ig = Math.random() * N; // ponto onde o fogo pega
+  chars.forEach((c, k) => {
+    const m = getComputedStyle(c).color.match(/\d+/g) || [241, 232, 216];
+    c._base = m.slice(0, 3).map(Number);
+    c._o = clamp(Math.abs(k - ig) / Math.max(4, N * .7)) * .75 + Math.random() * .25;
+    c._dx = (Math.random() - .5) * 60; c._r = (Math.random() - .5) * 50;
+    c._key = '';
+  });
+}
 function charStyle(chars, inN, outN) {
   const N = chars.length, st = Math.min(.07, .9 / N);
   chars.forEach((c, k) => {
-    const pi = easeOut(clamp(inN * (1 + N * st) - k * st));
-    const po = easeIO(clamp(outN * (1 + N * st) - k * st));
-    const y = outN > 0 ? -po * 115 : (1 - pi) * 115;
-    const r = outN > 0 ? -po * 10 : (1 - pi) * 14;
-    c.style.transform = `translate3d(0,${y.toFixed(1)}%,0) rotate(${r.toFixed(1)}deg)`;
+    let tf, col, sh = 'none', op = 1;
+    if (outN > 0) {
+      const b = clamp(outN * 1.7 - c._o * .7);
+      const heat = clamp(b / .3), burnt = clamp((b - .25) / .3), ash = easeOut(clamp((b - .45) / .55));
+      col = mixC(mixC(c._base, EMBER, heat), CHAR, burnt);
+      const g = heat * (1 - burnt * .7) * (1 - ash);
+      if (g > .02) sh = `0 0 ${(.12 + g * .25).toFixed(2)}em rgba(255,110,30,${(g * .9).toFixed(2)}), 0 0 .04em rgba(255,200,120,${g.toFixed(2)})`;
+      tf = `translate3d(${(c._dx * ash).toFixed(1)}%,${(-ash * 140).toFixed(1)}%,0) rotate(${(c._r * ash).toFixed(1)}deg) scale(${(1 - ash * .35).toFixed(3)})`;
+      op = 1 - ash;
+    } else {
+      const pi = easeOut(clamp(inN * (1 + N * st) - k * st));
+      const cool = clamp((pi - .35) / .65);
+      col = mixC(EMBER, c._base, cool);
+      const g = pi * (1 - cool);
+      if (g > .02) sh = `0 0 ${(.1 + g * .3).toFixed(2)}em rgba(255,120,40,${(g * .8).toFixed(2)})`;
+      tf = `translate3d(0,${((1 - pi) * 70).toFixed(1)}%,0) rotate(${((1 - pi) * 8).toFixed(1)}deg)`;
+      op = pi;
+    }
+    const key = tf + col + op;
+    if (key === c._key) return;
+    c._key = key;
+    c.style.transform = tf;
+    c.style.color = `rgb(${col})`;
+    c.style.textShadow = sh;
+    c.style.opacity = op.toFixed(3);
   });
 }
 
@@ -308,9 +347,17 @@ function updateWorld() {
 // borda de papel rasgado
 {
   const pts = []; let x = 0;
-  while (x < 100) { pts.push(`${x.toFixed(2)}% ${(30 + Math.random() * 70).toFixed(1)}%`); x += .6 + Math.random() * 1.8; }
+  while (x < 100) { pts.push(`${x.toFixed(2)}% ${(6 + Math.random() * 30 + Math.sin(x * .21) * 8).toFixed(1)}%`); x += .5 + Math.random() * 1.6; }
   pts.push('100% 60%', '100% 100%', '0% 100%');
   $('.tear').style.clipPath = `polygon(${pts.join(',')})`;
+  // faíscas que sobem da borda que ainda queima
+  const sm = document.createElement('div'); sm.className = 'smolder'; sm.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < (finePointer ? 26 : 14); i++) {
+    const e = document.createElement('i');
+    e.style.cssText = `left:${(Math.random() * 100).toFixed(1)}%;--t:${(2.2 + Math.random() * 2.8).toFixed(2)}s;--d:${(-Math.random() * 5).toFixed(2)}s;--x:${((Math.random() - .5) * 120).toFixed(0)}px;--h:${(90 + Math.random() * 160).toFixed(0)}px;--s:${(.5 + Math.random()).toFixed(2)}`;
+    sm.append(e);
+  }
+  $('.tear').after(sm);
   $('#fogo').style.setProperty('--tear-clip', `polygon(${pts.join(',')})`);
 }
 
@@ -320,6 +367,12 @@ cards.forEach(c => {
   c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.classList.toggle('flip'); } });
 });
 cards.forEach((c, k) => c.style.setProperty('--i', (k - (cards.length - 1) / 2).toFixed(2)));
+// a mão chamusca a carta por onde passa
+cards.forEach(c => c.addEventListener('pointermove', e => {
+  const r = c.getBoundingClientRect();
+  c.style.setProperty('--sx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+  c.style.setProperty('--sy', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+}, { passive: true }));
 
 // títulos da página: letras sobem quando entram na tela; o resto aparece em sequência
 $$('.big, .foot__t').forEach(h => { splitChars(h); h.classList.add('rv'); });
@@ -331,6 +384,23 @@ const seen = new IntersectionObserver(es => es.forEach(e => {
 }), { rootMargin: '0px 0px -10% 0px' });
 $$('.rv, .up').forEach(e => (STILL ? e.classList.add('in') : seen.observe(e)));
 
+// imagens do papel: pegam fogo e se revelam quando entram na tela
+if (!STILL && !reduced) {
+  const burnIn = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    burnIn.unobserve(e.target);
+    const el = e.target;
+    if (el.classList.contains('dc')) ignite($('img', el), { cover: '#f8f2e6', dur: 1.5, delay: (+el.dataset.k) * .12 });
+    else if (el.classList.contains('frame')) ignite(frameImg, { cover: '#120b07', dur: 2.2, delay: .25 });
+    else if (el.classList.contains('next')) ignite($('img', el), { cover: '#1b130d', dur: 1.8 });
+  }), { rootMargin: '0px 0px -18% 0px' });
+  $$('.dc').forEach((c, k) => { c.dataset.k = k; ignite($('img', c), { cover: '#f8f2e6', dur: 0 }); burnIn.observe(c); });
+  [$('.frame'), $('.next')].forEach(el => el && burnIn.observe(el));
+  // começam cobertas
+  const fi = $('.player__face img'); if (fi) ignite(fi, { cover: '#120b07', dur: 0 });
+  const ni = $('.next img'); if (ni) ignite(ni, { cover: '#1b130d', dur: 0 });
+}
+
 // parágrafo que acende palavra por palavra com a rolagem
 const lede = $('.lede'), ledeWords = splitWords(lede);
 // moldura do vídeo abre com a rolagem
@@ -341,6 +411,7 @@ function updatePage() {
   // sobre a lareira o cabeçalho volta a ser claro sobre escuro
   const fg = $('#fogo').getBoundingClientRect();
   hdr.classList.toggle('on-page', page.top < 40 && !(fg.top < 40 && fg.bottom > 40));
+  $('#page').classList.toggle('lit', page.top < innerHeight + 60 && page.top > -260);
   const lr = lede.getBoundingClientRect();
   const lp = clamp((innerHeight * .85 - lr.top) / (lr.height + innerHeight * .3));
   const lit = lp * (ledeWords.length + 3);
@@ -354,11 +425,23 @@ function updatePage() {
   deck.style.setProperty('--open', open.toFixed(3));
 }
 
+// pavio: a linha do topo queima da esquerda para a direita conforme a leitura avança
+const fuse = document.createElement('div'); fuse.className = 'fuse'; fuse.setAttribute('aria-hidden', 'true');
+fuse.innerHTML = '<i></i>';
+document.body.append(fuse);
+function updateFuse() {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  const p = max > 0 ? clamp(scrollY / max) : 0;
+  fuse.style.setProperty('--p', p.toFixed(4));
+  fuse.classList.toggle('paper', hdr.classList.contains('on-page'));
+}
+
 let lastY = scrollY, ticking = false;
 function onScroll() {
   updateWorld();
   updateCore();
   updatePage();
+  updateFuse();
   const dy = scrollY - lastY; lastY = scrollY;
   if (world && !reduced) world.kick(dy);
 }
@@ -388,6 +471,48 @@ if (finePointer && !STILL) {
     requestAnimationFrame(follow);
   };
   follow();
+
+  // o cursor é uma brasa: quanto mais rápido a mão, mais faíscas.
+  // No escuro elas sobem acesas; no papel caem como cinza.
+  const sc = document.createElement('canvas'); sc.className = 'sparks'; sc.setAttribute('aria-hidden', 'true');
+  document.body.append(sc);
+  const sg = sc.getContext('2d');
+  let sw = 0, sh = 0; const dpr = Math.min(2, devicePixelRatio || 1);
+  const sz = () => { sw = innerWidth; sh = innerHeight; sc.width = sw * dpr; sc.height = sh * dpr; sg.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  sz(); addEventListener('resize', sz);
+  const P = []; let px = x, py = y, onPaper = false, idleF = 0;
+  addEventListener('pointermove', e => {
+    const dx = e.clientX - px, dy = e.clientY - py, sp = Math.hypot(dx, dy);
+    px = e.clientX; py = e.clientY;
+    const n = Math.min(6, Math.floor(sp / 9));
+    for (let i = 0; i < n && P.length < 220; i++) {
+      const t = i / Math.max(1, n);
+      P.push({ x: px - dx * t, y: py - dy * t, vx: (Math.random() - .5) * 1.4 - dx * .04, vy: (Math.random() - .5) * 1.4 - dy * .04 - (onPaper ? 0 : .6), l: 1, d: .012 + Math.random() * .022, s: .6 + Math.random() * 1.6, ash: onPaper });
+    }
+  }, { passive: true });
+  const tickS = () => {
+    requestAnimationFrame(tickS);
+    onPaper = hdr.classList.contains('on-page');
+    if (!P.length) { if (idleF++ === 0) sg.clearRect(0, 0, sw, sh); return; }
+    idleF = 0;
+    sg.clearRect(0, 0, sw, sh);
+    sg.globalCompositeOperation = onPaper ? 'source-over' : 'lighter';
+    for (let i = P.length - 1; i >= 0; i--) {
+      const q = P[i];
+      q.l -= q.d; if (q.l <= 0) { P.splice(i, 1); continue; }
+      q.vx += Math.sin(q.y * .05 + q.l * 6) * .04; q.vx *= .97;
+      q.vy = q.ash ? q.vy * .96 + .05 : q.vy * .97 - .045;
+      q.x += q.vx; q.y += q.vy;
+      if (q.ash) { sg.fillStyle = `rgba(40,24,14,${(q.l * .55).toFixed(3)})`; sg.fillRect(q.x, q.y, q.s * 1.3, q.s * 1.3); continue; }
+      const r = q.s * (.6 + q.l);
+      const g = sg.createRadialGradient(q.x, q.y, 0, q.x, q.y, r * 4);
+      g.addColorStop(0, `rgba(255,${(150 + 80 * q.l) | 0},${(60 + 90 * q.l) | 0},${q.l.toFixed(3)})`);
+      g.addColorStop(.3, `rgba(255,100,25,${(q.l * .45).toFixed(3)})`);
+      g.addColorStop(1, 'rgba(255,80,20,0)');
+      sg.fillStyle = g; sg.beginPath(); sg.arc(q.x, q.y, r * 4, 0, 6.2832); sg.fill();
+    }
+  };
+  tickS();
   // botões magnéticos
   if (!reduced) $$('.btn, .pill, .player__play').forEach(b => {
     const host = b.classList.contains('player__play') ? b.parentElement : b;
@@ -400,9 +525,13 @@ if (finePointer && !STILL) {
 }
 
 // retrato que segue o cursor
-const peek = $('#peek');
+const peek = $('#peek'), peekImg = $('img', peek);
 $$('#cast li').forEach(li => {
-  li.addEventListener('pointerenter', () => { peek.src = li.dataset.img; peek.classList.add('on'); });
+  li.addEventListener('pointerenter', () => {
+    if (peekImg.dataset.src !== li.dataset.img) { peekImg.dataset.src = li.dataset.img; peekImg.src = asset(li.dataset.img); }
+    peek.classList.add('on');
+    if (!reduced) ignite(peekImg, { cover: '#eee4d1', dur: .75 });
+  });
   li.addEventListener('pointerleave', () => peek.classList.remove('on'));
   li.addEventListener('pointermove', e => { peek.style.left = e.clientX + 'px'; peek.style.top = e.clientY + 'px'; });
 });
@@ -432,7 +561,10 @@ const ANS = {
 };
 $$('[data-pick]').forEach(b => b.addEventListener('click', () => {
   $$('[data-pick]').forEach(x => x.setAttribute('aria-pressed', x === b));
-  $('#pickA').textContent = ANS[b.dataset.pick];
+  const a = $('#pickA');
+  a.textContent = ANS[b.dataset.pick];
+  splitWords(a).forEach((w, k) => w.style.setProperty('--k', k));
+  a.classList.remove('burnin'); void a.offsetWidth; a.classList.add('burnin');
 }));
 
 // player
