@@ -6,6 +6,7 @@
 */
 import Lenis from 'lenis';
 import { dissolve } from 'shared/entry.js';
+import { initSolte } from './solte.js';
 import 'shared/leave.js';
 import { createSound } from 'shared/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
@@ -456,10 +457,31 @@ const ANS = {
   p: 'La Boétie não pedia nada a ele, e por isso Montaigne nunca o esqueceu. Quanto mais você segura alguém, mais essa pessoa se afasta. Presença sem cobrança é o que fica.',
   f: 'Ensaio quer dizer tentativa. Montaigne reescreveu o livro até morrer e nunca o deu por pronto. O erro não era o fim do trabalho. Era o trabalho.',
 };
+// o que a pessoa escolhe (ou escreve) vira tinta em grãos; a resposta só aparece depois de soltar
+const pickA = $('#pickA'), solteIn = $('#solteIn');
+let pickKey = '';
+const OWN = 'Montaigne escreveria na margem: o que você segura também segura você. Repare no espaço que sobrou agora.';
+const solte = initSolte({
+  root: $('.pick'),
+  onRelease: () => { pickA.textContent = ANS[pickKey] || OWN; pickA.classList.add('on'); },
+});
+function choose(t, key) {
+  pickKey = key; pickA.classList.remove('on'); pickA.textContent = '';
+  solte.set(t.toLowerCase());
+}
 $$('[data-pick]').forEach(b => b.addEventListener('click', () => {
   $$('[data-pick]').forEach(x => x.setAttribute('aria-pressed', x === b));
-  $('#pickA').textContent = ANS[b.dataset.pick];
+  solteIn.value = '';
+  choose(b.textContent.trim(), b.dataset.pick);
 }));
+let typeT = 0;
+solteIn.addEventListener('input', () => {
+  $$('[data-pick]').forEach(x => x.setAttribute('aria-pressed', false));
+  clearTimeout(typeT);
+  typeT = setTimeout(() => { const t = solteIn.value.trim(); if (t) choose(t, ''); }, 350);
+});
+$('.solte__form').addEventListener('submit', e => { e.preventDefault(); const t = solteIn.value.trim(); if (t) choose(t, ''); });
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(() => choose('o que você segura', ''));
 
 // player
 $('#playerBtn').addEventListener('click', () => {

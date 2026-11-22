@@ -200,3 +200,18 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
 .hold .cap { max-width: min(520px, 40vw); }
 .hold .cap h3 { text-shadow: 0 0 30px rgba(244, 241, 234, .95), 0 0 6px rgba(244, 241, 234, .9); }
 @media (max-width: 860px) { .hold .cap, .hold .cap--c { max-width: none; right: var(--gut); bottom: 17vh; } }
+
+/* ===== Segure e solte (a pergunta do vídeo) ===== */
+.solte__form { display: flex; justify-content: center; margin-top: 26px; }
+.solte__form input { width: min(100%, 420px); text-align: center; font: italic 400 clamp(22px, 2vw, 30px)/1.2 var(--f-serif); color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 6px 0 10px; outline: none; transition: border-color .3s; }
+.solte__form input:focus { border-color: var(--gold); }
+.solte__form input::placeholder { color: rgba(26, 30, 37, .35); }
+.solte { position: relative; margin: 30px auto 0; width: min(100%, 1100px); }
+.solte__cv { display: block; width: 100%; height: clamp(150px, 16vw, 240px); cursor: grab; touch-action: pan-y; transform: scale(calc(1 - var(--g, 0) * .02)); }
+.solte.holding .solte__cv, .pick.holding .solte__cv { cursor: grabbing; }
+.solte .solte__btn { position: relative; left: auto; bottom: auto; translate: none; margin: 6px auto 0; width: max-content; }
+.solte .solte__btn span { font-size: inherit !important; }
+.solte .solte__btn span::before { content: none !important; }
+.pick.released .solte__btn { opacity: .35; pointer-events: none; }
+.m .pick__a { opacity: 0; transform: translateY(14px); transition: opacity 1s var(--ease), transform 1.2s var(--ease); }
+.m .pick__a.on { opacity: 1; transform: none; }
