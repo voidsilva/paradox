@@ -29,13 +29,16 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
 .m :focus-visible { outline-color: var(--gold); }
 
 /* ===== portão: uma folha de rosto ===== */
-.m .loader { background: var(--paper); }
-.m .loader::after { background: var(--gold); }
-.m .loader__pic { width: clamp(130px, 13vw, 170px); padding: 0; border-radius: 0; background: none; box-shadow: 0 0 0 1px var(--ink), 0 0 0 7px var(--paper), 0 0 0 8px var(--ink), 0 30px 60px -30px rgba(26, 30, 37, .5); transform: none; }
-.m .loader__pic img { filter: grayscale(.25) contrast(1.05); }
-.m .loader__mark { margin-top: 34px; font: 300 clamp(54px, 8vw, 112px)/.9 var(--f-serif); letter-spacing: .02em; text-shadow: none; }
+.m .loader { background: var(--paper); color: var(--ink);
+  --lf: blur(calc((1 - var(--lp)) * 16px)) brightness(calc(1.12 - var(--lp) * .1)) saturate(calc(.35 + var(--lp) * .5)) contrast(calc(.75 + var(--lp) * .2)); }
+.m .loader::before { background: linear-gradient(to top, rgba(239, 235, 226, .96), rgba(239, 235, 226, .15) 52%, rgba(239, 235, 226, .3)); }
+.m .loader__k { color: var(--gold); }
+.m .loader__mark { font: 300 clamp(70px, 13vw, 220px)/.86 var(--f-serif); letter-spacing: 0; text-shadow: none; }
 .m .loader__mark i { font: italic 300 1em/1 var(--f-serif); color: var(--gold); margin-right: 0; }
-.m .loader__sub { margin: 10px 0 0; color: var(--ink-2); }
+.m .loader__q { color: var(--ink-2); font-size: clamp(22px, 2.4vw, 36px); }
+.m .loader__q .sw { color: var(--gold); }
+.m .loader__row { border-top-color: var(--line); }
+.m .loader__n { color: var(--ink-2); }
 .m .loader .pill--glow { color: var(--paper); background: var(--ink); border-color: var(--ink); border-radius: 2px; font: 600 15px/1 var(--f-sans); letter-spacing: .02em; }
 .m .pill--glow::after { border-radius: 2px; }
 
@@ -83,7 +86,7 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
 .m .st__t--list .sw { color: var(--gold); }
 
 /* ===== Segure ===== */
-.core.hold { height: 420vh; background: var(--night); }
+.core.hold { height: 470vh; background: var(--night); }
 .hold .core__stage { background: radial-gradient(70% 70% at 50% 46%, #f4f1ea 0%, #e9e5dc 50%, var(--night) 85%); }
 .hold .core__stage::after { background: none; }
 /* quanto mais aperta, mais a sala escurece em volta */
@@ -170,6 +173,7 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
 .m .btn:hover { background: var(--gold); }
 .m .foot__cols p { font: 400 17px/1.4 var(--f-serif); }
 .m .next { border-radius: 2px; }
+.m .outro .next { border-radius: 0; }
 .m .next b { font: 300 clamp(30px, 3.6vw, 60px)/1 var(--f-serif); letter-spacing: -.01em; }
 
 @media (max-width: 860px) {
@@ -197,3 +201,18 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
 .hold .cap { max-width: min(520px, 40vw); }
 .hold .cap h3 { text-shadow: 0 0 30px rgba(244, 241, 234, .95), 0 0 6px rgba(244, 241, 234, .9); }
 @media (max-width: 860px) { .hold .cap, .hold .cap--c { max-width: none; right: var(--gut); bottom: 17vh; } }
+
+/* ===== Segure e solte (a pergunta do vídeo) ===== */
+.solte__form { display: flex; justify-content: center; margin-top: 26px; }
+.solte__form input { width: min(100%, 420px); text-align: center; font: italic 400 clamp(22px, 2vw, 30px)/1.2 var(--f-serif); color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 6px 0 10px; outline: none; transition: border-color .3s; }
+.solte__form input:focus { border-color: var(--gold); }
+.solte__form input::placeholder { color: rgba(26, 30, 37, .35); }
+.solte { position: relative; margin: 30px auto 0; width: min(100%, 1100px); }
+.solte__cv { display: block; width: 100%; height: clamp(150px, 16vw, 240px); cursor: grab; touch-action: pan-y; transform: scale(calc(1 - var(--g, 0) * .02)); }
+.solte.holding .solte__cv, .pick.holding .solte__cv { cursor: grabbing; }
+.solte .solte__btn { position: relative; left: auto; bottom: auto; translate: none; margin: 6px auto 0; width: max-content; }
+.solte .solte__btn span { font-size: inherit !important; }
+.solte .solte__btn span::before { content: none !important; }
+.pick.released .solte__btn { opacity: .35; pointer-events: none; }
+.m .pick__a { opacity: 0; transform: translateY(14px); transition: opacity 1s var(--ease), transform 1.2s var(--ease); }
+.m .pick__a.on { opacity: 1; transform: none; }

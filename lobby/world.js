@@ -113,8 +113,8 @@ export async function createLobby({ canvas, asset = u => u, portals, still = fal
   const img = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = asset(src); });
   const tex = src => new Promise(res => loader.load(asset(src), t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; res(t); }, undefined, () => res(null)));
   const [thI, thM] = await Promise.all([
-    Promise.all([...Array(10).keys()].map(k => img(`lobby/img/i${k}.jpg`))),
-    Promise.all([...Array(10).keys()].map(k => img(`lobby/img/m${k}.jpg`))),
+    Promise.all([...Array(10).keys()].map(k => img(`lobby/img/i${k}.webp`))),
+    Promise.all([...Array(10).keys()].map(k => img(`lobby/img/m${k}.webp`))),
   ]);
 
   // cada viga é uma galeria com a identidade do seu paradoxo

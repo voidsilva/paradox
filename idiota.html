@@ -23,25 +23,32 @@
 </script>
 </head>
 <body class="is-loading">
+<a class="skip mono" href="#page">Pular para o texto</a>
 
-<div class="loader" id="loader" aria-live="polite">
-  <div class="loader__pic" aria-hidden="true"><img id="loadPic" src="img/paint/p15-rua.jpg" alt=""></div>
-  <p class="loader__mark"><i>P</i>aradoxo</p>
-  <p class="mono loader__n"><span id="loadN">00</span> / 32 pinturas</p>
-  <div class="loader__go">
-    <button class="pill pill--glow" id="enterSnd" type="button">Entrar com som</button>
-    <button class="loader__mute mono" id="enterMute" type="button">Entrar em silêncio</button>
+<div class="loader" id="loader">
+  <img class="loader__bg" id="loadPic" src="img/paint/p15-rua.webp" alt="" aria-hidden="true">
+  <div class="loader__in">
+    <p class="mono loader__k"><span>I · O Idiota</span><span>Dostoiévski, 1869</span></p>
+    <p class="loader__mark"><i>P</i>aradoxo</p>
+    <p class="loader__q"><em class="sw">Ser bom</em> é suficiente?</p>
+    <div class="loader__row">
+      <p class="mono loader__n" aria-live="polite"><span id="loadN">00</span> / 32 pinturas</p>
+      <div class="loader__go">
+        <button class="pill pill--glow" id="enterSnd" type="button">Entrar com som</button>
+        <button class="loader__mute mono" id="enterMute" type="button">Entrar em silêncio</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <header class="hdr" id="hdr">
-  <a class="hdr__mark" href="index.html" aria-label="Paradoxo, voltar às portas"><i>P</i><span>aradoxo</span><small class="mono">I · O Idiota</small></a>
+  <a class="hdr__mark" href="index.html" title="Voltar às portas"><i>P</i><span>aradoxo</span><small class="mono">I · O Idiota</small></a>
   <nav class="hdr__nav mono" aria-label="Seções">
     <a href="#forte">A bondade forte</a>
     <a href="#quem">Quem é quem</a>
     <a href="#video">O vídeo</a>
   </nav>
-  <button class="hdr__snd mono" id="sndBtn" type="button" aria-pressed="false" aria-label="Trilha sonora"><i></i><i></i><i></i><i></i><span>Som</span></button>
+  <button class="hdr__snd mono" id="sndBtn" type="button" aria-pressed="false" aria-label="Som: trilha sonora"><i></i><i></i><i></i><i></i><span>Som</span></button>
   <button class="hdr__menu mono" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu">Menu</button>
 </header>
 
@@ -120,7 +127,7 @@
   <section class="core" id="core" aria-labelledby="coreT">
     <div class="core__stage">
       <canvas id="coreGl" aria-hidden="true"></canvas>
-      <img class="core__flat" id="coreFlat" src="img/paint/p01-retrato.jpg" alt="" aria-hidden="true">
+      <img class="core__flat" id="coreFlat" src="img/paint/p01-retrato.webp" alt="" aria-hidden="true">
       <h2 class="sr" id="coreT">O retrato que quebra</h2>
       <article class="cap" data-k="0"><h3><em class="sw">Míchkin</em></h3><p class="mono">o santo</p></article>
       <article class="cap cap--r" data-k="1"><h3><em class="sw">Rogójin</em></h3><p class="mono">o que ama como quem prende</p></article>
@@ -137,12 +144,12 @@
       <h2 class="big" id="forteT"><em class="sw">Bondade</em> com espinha</h2>
       <p class="lede">Míchkin chega a Petersburgo sem armadura e vai embora sem ter salvado ninguém. Dostoiévski não ri dele. Tira a conclusão mais dura do livro: o coração puro é necessário e não basta. A bondade que atravessa aquela sala precisa aprender seis verbos. Passe o dedo ou o mouse nas cartas.</p>
       <div class="deck" id="deck">
-        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p02-dostoievski.jpg" alt="" loading="lazy"><figcaption><span class="mono">I</span>Discernir</figcaption></div><div class="dc__b"><span class="mono">I · Discernir</span><p>Ver a pessoa como ela é, e não como você precisa que ela seja.</p></div></div></figure>
-        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p04-dois-homens.jpg" alt="" loading="lazy"><figcaption><span class="mono">II</span>Escolher</figcaption></div><div class="dc__b"><span class="mono">II · Escolher</span><p>Míchkin quis amar Aglaia e Nastássia ao mesmo tempo. Perdeu as duas.</p></div></div></figure>
-        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p18-gola.jpg" alt="" loading="lazy"><figcaption><span class="mono">III</span>Agir</figcaption></div><div class="dc__b"><span class="mono">III · Agir</span><p>Compaixão que só observa vira plateia do sofrimento alheio.</p></div></div></figure>
-        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p05-nastassia.jpg" alt="" loading="lazy"><figcaption><span class="mono">IV</span>Recusar</figcaption></div><div class="dc__b"><span class="mono">IV · Recusar</span><p>Dizer não a quem destrói também é um jeito de cuidar.</p></div></div></figure>
-        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p16-olhar.jpg" alt="" loading="lazy"><figcaption><span class="mono">V</span>Enfrentar</figcaption></div><div class="dc__b"><span class="mono">V · Enfrentar</span><p>Rogójin não precisava de mais um perdão. Precisava de um limite.</p></div></div></figure>
-        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p20-duas.jpg" alt="" loading="lazy"><figcaption><span class="mono">VI</span>Proteger</figcaption></div><div class="dc__b"><span class="mono">VI · Proteger</span><p>Quem não se protege acaba sem nada para oferecer.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p02-dostoievski.webp" alt="" loading="lazy"><figcaption><span class="mono">I</span>Discernir</figcaption></div><div class="dc__b"><span class="mono">I · Discernir</span><p>Ver a pessoa como ela é, e não como você precisa que ela seja.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p04-dois-homens.webp" alt="" loading="lazy"><figcaption><span class="mono">II</span>Escolher</figcaption></div><div class="dc__b"><span class="mono">II · Escolher</span><p>Míchkin quis amar Aglaia e Nastássia ao mesmo tempo. Perdeu as duas.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p18-gola.webp" alt="" loading="lazy"><figcaption><span class="mono">III</span>Agir</figcaption></div><div class="dc__b"><span class="mono">III · Agir</span><p>Compaixão que só observa vira plateia do sofrimento alheio.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p05-nastassia.webp" alt="" loading="lazy"><figcaption><span class="mono">IV</span>Recusar</figcaption></div><div class="dc__b"><span class="mono">IV · Recusar</span><p>Dizer não a quem destrói também é um jeito de cuidar.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p16-olhar.webp" alt="" loading="lazy"><figcaption><span class="mono">V</span>Enfrentar</figcaption></div><div class="dc__b"><span class="mono">V · Enfrentar</span><p>Rogójin não precisava de mais um perdão. Precisava de um limite.</p></div></div></figure>
+        <figure class="dc" tabindex="0"><div class="dc__in"><div class="dc__f"><img src="img/paint/p20-duas.webp" alt="" loading="lazy"><figcaption><span class="mono">VI</span>Proteger</figcaption></div><div class="dc__b"><span class="mono">VI · Proteger</span><p>Quem não se protege acaba sem nada para oferecer.</p></div></div></figure>
       </div>
     </section>
 
@@ -172,13 +179,32 @@
       <p class="pick__a" id="pickA" aria-live="polite"></p>
     </section>
 
+    <section class="fogo" id="fogo" aria-labelledby="fogoT">
+      <canvas class="fogo__fire" aria-hidden="true"></canvas>
+      <div class="fogo__head">
+        <p class="mono kick">Cem mil rublos</p>
+        <h2 class="big" id="fogoT">Atire <em class="sw">no fogo</em></h2>
+        <p class="fogo__lede">Nastássia jogou o dinheiro na lareira e disse a Gánia que era dele, se tirasse com as mãos. Escreva na nota o que você não venderia por nada. Depois arraste a nota até o fogo.</p>
+        <form class="fogo__form" autocomplete="off">
+          <label class="mono" for="fogoIn">O que não está à venda</label>
+          <input id="fogoIn" name="fogo" maxlength="34" placeholder="minha palavra" spellcheck="false">
+        </form>
+      </div>
+      <div class="fogo__note" tabindex="0" role="button" aria-label="Nota de cem mil rublos com o que você escreveu. Arraste até o fogo, ou aperte Enter para atirar."><canvas></canvas></div>
+      <button class="pill fogo__btn" type="button">Atirar no fogo</button>
+      <div class="fogo__out">
+        <p class="fogo__end" aria-live="polite"></p>
+        <button class="fogo__again mono" type="button" hidden>Escrever outra nota</button>
+      </div>
+    </section>
+
     <section class="video" id="video" aria-labelledby="videoT">
       <p class="mono kick">De onde tudo isto saiu</p>
       <h2 class="big" id="videoT"><em class="sw">23 minutos</em> que incomodam</h2>
       <div class="frame">
         <div class="player" id="player">
-          <button class="player__face" id="playerBtn" type="button" aria-label="Reproduzir o vídeo O Paradoxo de Ser uma Boa Pessoa">
-            <img src="img/paint/p01-retrato.jpg" alt="">
+          <button class="player__face" id="playerBtn" type="button"><span class="sr">Reproduzir o vídeo: </span>
+            <img src="img/paint/p01-retrato.webp" alt="">
             <span class="player__play" aria-hidden="true">▶</span>
             <span class="mono player__cap">A Psique · 23 min<br>O Paradoxo de Ser uma Boa Pessoa</span>
           </button>
@@ -197,8 +223,14 @@
         <p><span class="mono">Outros</span><a href="index.html">Voltar às portas do Paradoxo</a></p>
         <p><span class="mono">Mande para</span><button class="copy" type="button" data-copy="https://www.youtube.com/watch?v=7dcqp1zuZd4">alguém que é bom demais</button><span class="copied mono" aria-live="polite"></span></p>
       </div>
-      <a class="next" href="montaigne.html"><img src="montaigne/img/paint/m18-colina.jpg" alt="" loading="lazy"><span class="mono">Próximo paradoxo · Montaigne</span><b><em class="sw">Solte.</em> Por que tudo melhora quando você para de apertar</b><i aria-hidden="true">→</i></a>
     </footer>
+
+    <section class="outro" aria-label="Próximo paradoxo">
+      <div class="outro__stick">
+        <a class="next" href="montaigne.html"><img src="montaigne/img/paint/m18-colina.webp" alt=""><span class="mono">Próximo paradoxo · Montaigne</span><b><em class="sw">Solte.</em> Por que tudo melhora quando você para de apertar</b><i aria-hidden="true">→</i></a>
+        <p class="outro__hint mono" hidden><span>Continue rolando para entrar</span><i aria-hidden="true"></i></p>
+      </div>
+    </section>
   </div>
 </main>
 

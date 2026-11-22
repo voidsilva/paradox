@@ -43,3 +43,14 @@
 - Cada porta tem duas folhas entreabertas; com o cursor elas se escancaram (a trancada só treme).
 - Uma lanterna quente segue o cursor, passa rasante pelas galerias e acende a poeira no ar.
 - Cada porta está numa gravidade (em pé, de lado). Brasas sobem da porta do Idiota; papéis voam da porta do Montaigne. O céu é metade brasa, metade névoa.
+
+## v11
+- Início: som todo gerado (lobby/sound.js), desligado até a pessoa tocar em "Som"; zumbido grave, brasa perto do Idiota, vento perto do Montaigne, sino quando o objeto fecha, sopro ao entrar. A escolha fica salva.
+- Início: cursor em anel que segue a mão e vira "Entrar" na cor da porta; a pergunta da porta desliza para dentro da tela no celular.
+- Montaigne: palco do livro mais alto (fundo .8, arco .96) e poeira dourada que só aparece dentro do feixe da janela (mesma função gobo do chão).
+
+## v12 (varal)
+- O livro saiu. Montaigne agora é um varal na névoa clara (montaigne/src/varal.js): cada capítulo é uma pintura impressa em papel presa por dois prendedores. Quando o capítulo acaba, os prendedores saltam e o vento leva a folha; a câmera segue pelo fio até a próxima. Tudo é função da rolagem, então voltar devolve as folhas ao fio.
+
+## v13 (pó de pintura)
+- O varal saiu. Cada pintura é feita de ~85 mil grãos (montaigne/src/dust.js), cada um com a cor de um ponto do quadro. Na troca de capítulo, uma frente de vento varre da esquerda para a direita, solta os grãos numa corrente (curl noise), troca a cor no ar e pousa a próxima pintura. O cursor desprende grãos por onde passa. Letras dos títulos saem no mesmo vento, sem giros.
