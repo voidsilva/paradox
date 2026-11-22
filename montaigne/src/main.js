@@ -5,6 +5,7 @@
   Roteiro: 7 cenas que se soltam ao vento → "Segure" (a atração) → página clara.
 */
 import Lenis from 'lenis';
+import { dissolve } from 'shared/entry.js';
 import 'shared/leave.js';
 import { createSound } from 'shared/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
@@ -115,15 +116,19 @@ let introP = STILL || reduced ? 1 : 0;
 // enquanto carrega, as pinturas passam como num projetor
 const LOAD_PICS = ['m17-retrato', 'm18-colina', 'm05-punho', 'm06-multidao', 'm10-torre', 'm13-olhos', 'm14-ela', 'm16-bracos', 'm09-horizonte', 'm15-praia'];
 let picI = 0;
-const picTimer = loadPic && !RM && !STILL ? setInterval(() => { loadPic.src = asset('montaigne/img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.webp'); }, 150) : 0;
+const picTimer = 0; // a abertura agora é uma pintura parada que entra em foco (antes trocava a cada 150 ms)
 
 function reveal() {
   clearInterval(picTimer);
   document.body.classList.remove('is-loading');
   loader.classList.add('out');
-  setTimeout(() => loader.remove(), 1700);
+  // a pintura da abertura vira o mundo: vira pó e o vento leva
+  const pic = $('#loadPic');
+  const go = () => dissolve({ img: pic, host: loader, mode: 'dust', filter: 'brightness(1.02) saturate(.85) contrast(.95)', dur: 2300,
+    shade: (c, w, h) => { const g = c.createLinearGradient(0, h, 0, 0); [[0, 'rgba(239,235,226,.96)'], [.52, 'rgba(239,235,226,.15)'], [1, 'rgba(239,235,226,.3)']].forEach(([o, col]) => g.addColorStop(o, col)); c.fillStyle = g; c.fillRect(0, 0, w, h); } });
+  (STILL || !pic.complete || !pic.naturalWidth ? Promise.resolve() : go()).finally(() => loader.remove());
   if (introP < 1) {
-    const t0 = performance.now() + 900, D = 3600;
+    const t0 = performance.now() + 250, D = 3200; // os grãos começam a chegar enquanto o vento ainda leva a abertura
     if (world) world.set({ intro: 0 });
     const step = now => {
       introP = clamp((now - t0) / D);
@@ -148,7 +153,7 @@ function reveal() {
     const labels = $$('.st').map(el => { const n = $('.st__num', el); return n ? n.textContent.trim() : 'Prefácio — Quanto mais segura'; });
     world = await createDust({
       canvas: $('#gl'), tier, still: STILL, scenes: MONTAIGNE.scenes, labels, dir: MONTAIGNE.dir, asset,
-      onProgress: v => { loadN.textContent = String(Math.round(v * 27)).padStart(2, '0'); },
+      onProgress: v => { loadN.textContent = String(Math.round(v * 27)).padStart(2, '0'); loader.style.setProperty('--lp', (v * .9).toFixed(3)); },
     });
     window.__world = world;
     if (!STILL) world.start();
@@ -160,7 +165,7 @@ function reveal() {
   await initCore();
   if (STILL) { reveal(); return; }
   clearInterval(picTimer);
-  loader.classList.add('ready'); loadN.textContent = '27';
+  loader.classList.add('ready'); loadN.textContent = '27'; loader.style.setProperty('--lp', 1);
   $('#enterSnd').focus({ preventScroll: true });
 })();
 

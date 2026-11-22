@@ -24,13 +24,19 @@
 <body class="is-loading">
 <a class="skip mono" href="#page">Pular para o texto</a>
 
-<div class="loader" id="loader" aria-live="polite">
-  <div class="loader__pic" aria-hidden="true"><img id="loadPic" src="img/paint/p15-rua.webp" alt=""></div>
-  <p class="loader__mark"><i>P</i>aradoxo</p>
-  <p class="mono loader__n"><span id="loadN">00</span> / 32 pinturas</p>
-  <div class="loader__go">
-    <button class="pill pill--glow" id="enterSnd" type="button">Entrar com som</button>
-    <button class="loader__mute mono" id="enterMute" type="button">Entrar em silêncio</button>
+<div class="loader" id="loader">
+  <img class="loader__bg" id="loadPic" src="img/paint/p15-rua.webp" alt="" aria-hidden="true">
+  <div class="loader__in">
+    <p class="mono loader__k"><span>I · O Idiota</span><span>Dostoiévski, 1869</span></p>
+    <p class="loader__mark"><i>P</i>aradoxo</p>
+    <p class="loader__q"><em class="sw">Ser bom</em> é suficiente?</p>
+    <div class="loader__row">
+      <p class="mono loader__n" aria-live="polite"><span id="loadN">00</span> / 32 pinturas</p>
+      <div class="loader__go">
+        <button class="pill pill--glow" id="enterSnd" type="button">Entrar com som</button>
+        <button class="loader__mute mono" id="enterMute" type="button">Entrar em silêncio</button>
+      </div>
+    </div>
   </div>
 </div>
 

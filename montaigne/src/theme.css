@@ -29,13 +29,16 @@ body.m ::selection { background: var(--gold); color: var(--paper); }
 .m :focus-visible { outline-color: var(--gold); }
 
 /* ===== portão: uma folha de rosto ===== */
-.m .loader { background: var(--paper); }
-.m .loader::after { background: var(--gold); }
-.m .loader__pic { width: clamp(130px, 13vw, 170px); padding: 0; border-radius: 0; background: none; box-shadow: 0 0 0 1px var(--ink), 0 0 0 7px var(--paper), 0 0 0 8px var(--ink), 0 30px 60px -30px rgba(26, 30, 37, .5); transform: none; }
-.m .loader__pic img { filter: grayscale(.25) contrast(1.05); }
-.m .loader__mark { margin-top: 34px; font: 300 clamp(54px, 8vw, 112px)/.9 var(--f-serif); letter-spacing: .02em; text-shadow: none; }
+.m .loader { background: var(--paper); color: var(--ink);
+  --lf: blur(calc((1 - var(--lp)) * 16px)) brightness(calc(1.12 - var(--lp) * .1)) saturate(calc(.35 + var(--lp) * .5)) contrast(calc(.75 + var(--lp) * .2)); }
+.m .loader::before { background: linear-gradient(to top, rgba(239, 235, 226, .96), rgba(239, 235, 226, .15) 52%, rgba(239, 235, 226, .3)); }
+.m .loader__k { color: var(--gold); }
+.m .loader__mark { font: 300 clamp(70px, 13vw, 220px)/.86 var(--f-serif); letter-spacing: 0; text-shadow: none; }
 .m .loader__mark i { font: italic 300 1em/1 var(--f-serif); color: var(--gold); margin-right: 0; }
-.m .loader__sub { margin: 10px 0 0; color: var(--ink-2); }
+.m .loader__q { color: var(--ink-2); font-size: clamp(22px, 2.4vw, 36px); }
+.m .loader__q .sw { color: var(--gold); }
+.m .loader__row { border-top-color: var(--line); }
+.m .loader__n { color: var(--ink-2); }
 .m .loader .pill--glow { color: var(--paper); background: var(--ink); border-color: var(--ink); border-radius: 2px; font: 600 15px/1 var(--f-sans); letter-spacing: .02em; }
 .m .pill--glow::after { border-radius: 2px; }
 

@@ -49,20 +49,26 @@ body::after {
 @keyframes grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } }
 
 /* ===== Loader ===== */
-.loader { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; text-align: center; background: var(--night); clip-path: inset(0 0 0 0); transition: clip-path 1.25s cubic-bezier(.76, 0, .24, 1) .15s, visibility 0s 1.5s; }
-.loader.out { clip-path: inset(50% 0 50% 0); visibility: hidden; }
-.loader::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--gold); transform: scaleX(0); transition: transform .9s var(--ease); }
-.loader.out::after { transform: scaleX(1); }
-.loader__pic { width: clamp(120px, 13vw, 170px); aspect-ratio: 4 / 5; padding: 7px; border-radius: 3px; background: linear-gradient(135deg, #b98d43, #ecd08f 22%, #8a6122 48%, #e2be74 72%, #7d561c); box-shadow: 0 30px 60px -20px #000; transform: rotate(-3deg); transition: transform 1.3s var(--ease), opacity .8s; }
-.loader__pic img { width: 100%; height: 100%; object-fit: cover; display: block; filter: sepia(.2) contrast(1.05); }
-.loader.out .loader__pic { transform: rotate(0) scale(1.6); opacity: 0; }
-.loader__mark { position: relative; margin: -.42em 0 0; font: 500 clamp(48px, 8vw, 110px)/.9 var(--f-sans); letter-spacing: -.04em; text-shadow: 0 10px 40px rgba(13, 9, 7, .8); transition: transform 1.2s var(--ease), opacity .7s; }
-.loader.out .loader__mark { transform: translateY(-40%); opacity: 0; }
-.loader__mark i { font: italic 500 1.08em/1 var(--f-serif); margin-right: .06em; }
-.loader__n { margin: 18px 0 0; color: var(--bone-2); transition: opacity .5s; }
-.loader__go { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 30px; opacity: 0; transform: translateY(16px); pointer-events: none; transition: opacity .8s var(--ease), transform .9s var(--ease); }
+/* A abertura é a primeira pintura em tela cheia. Enquanto carrega ela entra em foco; ao entrar, queima
+   e revela o mundo 3D, que começa nessa mesma pintura. A porta do início e o cartão "próximo paradoxo"
+   terminam exatamente neste quadro, então a troca de página não tem corte. */
+.loader { position: fixed; inset: 0; z-index: 100; overflow: hidden; background: var(--night); color: var(--bone); --lp: 0;
+  --lf: blur(calc((1 - var(--lp)) * 16px)) brightness(calc(.42 + var(--lp) * .2)) saturate(calc(.55 + var(--lp) * .4)); }
+.loader__bg { position: absolute; inset: -24px; width: calc(100% + 48px); height: calc(100% + 48px); max-width: none; object-fit: cover; filter: var(--lf); transition: filter .5s linear; }
+.loader::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to top, rgba(13, 9, 7, .92), rgba(13, 9, 7, .25) 55%, rgba(13, 9, 7, .4)); }
+.loader.out { background: transparent; pointer-events: none; }
+.loader.out::before { opacity: 0; }
+.loader__in { position: absolute; z-index: 4; left: var(--gut); right: var(--gut); bottom: clamp(26px, 7vh, 70px); display: grid; justify-items: start; transition: opacity .45s var(--ease), transform .7s var(--ease), filter .5s; }
+.loader.out .loader__in { opacity: 0; transform: translateY(-18px); filter: blur(6px); }
+.loader__k { display: flex; gap: 22px; margin: 0 0 14px; color: var(--gold); }
+.loader__mark { margin: 0; font: 700 clamp(64px, 13vw, 220px)/.82 var(--f-sans); letter-spacing: -.055em; text-shadow: 0 10px 50px rgba(13, 9, 7, .6); }
+.loader__mark i { font: italic 500 1.06em/1 var(--f-serif); margin-right: .02em; letter-spacing: -.02em; }
+.loader__q { margin: 14px 0 0; font: 400 clamp(20px, 2.2vw, 34px)/1.15 var(--f-serif); color: var(--bone-2); }
+.loader__q .sw { color: var(--bone); }
+.loader__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 40px; width: 100%; margin-top: clamp(22px, 4vh, 44px); padding-top: 18px; border-top: 1px solid rgba(241, 232, 216, .18); }
+.loader__n { margin: 0; color: var(--bone-2); }
+.loader__go { display: flex; align-items: center; gap: 22px; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .8s var(--ease), transform .9s var(--ease); }
 .loader.ready .loader__go { opacity: 1; transform: none; pointer-events: auto; }
-.loader.ready .loader__n { opacity: .5; }
 .loader .pill--glow { color: var(--night); background: var(--bone); border-color: var(--bone); position: relative; }
 .pill--glow::after { content: ""; position: absolute; inset: -6px; border-radius: inherit; border: 1px solid var(--gold); opacity: .6; animation: ring 2.2s var(--ease) infinite; }
 @keyframes ring { from { transform: scale(.94); opacity: .7; } to { transform: scale(1.18); opacity: 0; } }

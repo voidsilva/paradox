@@ -6,6 +6,7 @@
   Roteiro: 7 cenas seguindo a narração do vídeo → página em papel com a "bondade forte".
 */
 import Lenis from 'lenis';
+import { dissolve } from './entry.js';
 import './leave.js';
 import { createSound } from 'app/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
@@ -99,13 +100,17 @@ let introP = STILL ? 1 : 0;
 // enquanto carrega, as pinturas passam como num projetor
 const LOAD_PICS = ['p15-rua', 'p01-retrato', 'p09-caveira', 'p03-trem', 'p06-salao', 'p05-nastassia', 'p12-angustia', 'p07-flor', 'p19-brinde', 'p20-duas'];
 let picI = 0;
-const picTimer = loadPic && !reduced && !STILL ? setInterval(() => { loadPic.src = asset('img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.webp'); }, 150) : 0;
+const picTimer = 0; // a abertura agora é uma pintura parada que entra em foco (antes trocava a cada 150 ms)
 
 function reveal() {
   clearInterval(picTimer);
   document.body.classList.remove('is-loading');
   loader.classList.add('out');
-  setTimeout(() => loader.remove(), 1700);
+  // a pintura da abertura vira o mundo: queima
+  const pic = $('#loadPic');
+  const go = () => dissolve({ img: pic, host: loader, mode: 'burn', filter: 'brightness(.62) saturate(.95)', dur: 1900,
+    shade: (c, w, h) => { const g = c.createLinearGradient(0, h, 0, 0); [[0, 'rgba(13,9,7,.92)'], [.55, 'rgba(13,9,7,.25)'], [1, 'rgba(13,9,7,.4)']].forEach(([o, col]) => g.addColorStop(o, col)); c.fillStyle = g; c.fillRect(0, 0, w, h); } });
+  (STILL || !pic.complete || !pic.naturalWidth ? Promise.resolve() : go()).finally(() => loader.remove());
   if (introP < 1) {
     const t0 = performance.now() + 300, D = 2800;
     if (world) world.set({ intro: 0 });
@@ -130,7 +135,7 @@ function reveal() {
     const { createWorld } = await import('./world/world.js');
     world = await createWorld({
       canvas: $('#gl'), tier, still: STILL,
-      onProgress: v => { loadN.textContent = String(Math.round(v * 32)).padStart(2, '0'); },
+      onProgress: v => { loadN.textContent = String(Math.round(v * 32)).padStart(2, '0'); loader.style.setProperty('--lp', (v * .9).toFixed(3)); },
     });
     window.__world = world;
     if (!STILL) world.start();
@@ -142,7 +147,7 @@ function reveal() {
   await initCore();
   if (STILL) { reveal(); return; }
   clearInterval(picTimer);
-  loader.classList.add('ready'); loadN.textContent = '32';
+  loader.classList.add('ready'); loadN.textContent = '32'; loader.style.setProperty('--lp', 1);
   $('#enterSnd').focus({ preventScroll: true });
 })();
 
