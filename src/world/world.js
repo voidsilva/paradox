@@ -118,7 +118,7 @@ export async function createWorld({ canvas, base = '', tier = 'high', still = fa
     tex[key] = t; onProgress(++done / total); res();
   }, undefined, () => { onProgress(++done / total); res(); }));
   await Promise.all([
-    ...PAINTS.map(k => load('p:' + k, C.dir + 'paint/' + k + '.jpg')),
+    ...PAINTS.map(k => load('p:' + k, C.dir + 'paint/' + k + '.webp')),
     ...CUTS.map(k => load('c:' + k, C.dir + 'cut/' + k + '.webp')),
   ]);
 

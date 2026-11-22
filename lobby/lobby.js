@@ -9,13 +9,25 @@ const body = document.body, veil = $('#veil');
 const tags = Object.fromEntries($$('.tag').map(t => [t.dataset.id, t]));
 const HREF = Object.fromEntries($$('.doors a').map(a => [a.dataset.id, a.getAttribute('href')]));
 const TONE = { idiota: '#170c06', montaigne: '#e4e1d8' };
+// o primeiro quadro da abertura de cada paradoxo: a porta termina nele, então a troca de página não tem corte
+const ENTRY = {
+  idiota: { img: 'img/paint/p15-rua.webp', bg: '#0d0907', filter: 'blur(16px) brightness(.42) saturate(.55)', shade: 'linear-gradient(to top, rgba(13,9,7,.92), rgba(13,9,7,.25) 55%, rgba(13,9,7,.4))' },
+  montaigne: { img: 'montaigne/img/paint/m18-colina.webp', bg: '#efebe2', filter: 'blur(16px) brightness(1.12) saturate(.35) contrast(.75)', shade: 'linear-gradient(to top, rgba(239,235,226,.96), rgba(239,235,226,.15) 52%, rgba(239,235,226,.3))' },
+};
+function paintVeil(v, id) {
+  const e = ENTRY[id]; if (!e) return false;
+  v.innerHTML = `<img alt="" src="${asset(e.img)}" style="position:absolute;inset:-24px;width:calc(100% + 48px);height:calc(100% + 48px);max-width:none;object-fit:cover;filter:${e.filter}"><i style="position:absolute;inset:0;background:${e.shade}"></i>`;
+  v.style.background = e.bg;
+  return true;
+}
+
 
 // as três portas: onde ficam, qual é o chão de cada uma
 const L = 14, T = 2.6;
 const PORTALS = [
-  { id: 'idiota', paint: 'img/paint/p15-rua.jpg', cut: 'img/cut/p01-retrato.webp', figH: .84, fade: .18, tone: 0xffa04a, fx: 'ember',
+  { id: 'idiota', paint: 'img/paint/p15-rua.webp', cut: 'img/cut/p01-retrato.webp', figH: .84, fade: .18, tone: 0xffa04a, fx: 'ember',
     at: [L * .5, T / 2, 0], up: [0, 1, 0], fwd: [.45, 0, 1] },
-  { id: 'montaigne', paint: 'montaigne/img/paint/m15-praia.jpg', cut: 'montaigne/img/cut/m09-horizonte.webp', figH: .8, fade: .02, figX: .12, tone: 0xcfe0ff, fx: 'wind', ped: 0xbdb7aa, door: 0xd9d3c6,
+  { id: 'montaigne', paint: 'montaigne/img/paint/m18-colina.webp', cut: 'montaigne/img/cut/m09-horizonte.webp', figH: .8, fade: .02, figX: .12, tone: 0xcfe0ff, fx: 'wind', ped: 0xbdb7aa, door: 0xd9d3c6,
     at: [L + T / 2, L * .48, 0], up: [1, 0, 0], fwd: [0, .45, 1] },
   { id: 'soon', locked: true, tone: 0x999999, ped: 0x8d826f,
     at: [L, L + T / 2, L * .55], up: [0, 1, 0], fwd: [1, 0, .45] },
@@ -57,7 +69,7 @@ function go(id) {
   const href = HREF[id]; if (!href || leaving) return;
   leaving = true;
   sound.enter();
-  veil.style.background = TONE[id] || '#000';
+  if (!paintVeil(veil, id)) veil.style.background = TONE[id] || '#000';
   body.classList.add('leaving');
   if (lobby) { lobby.enter(id); setTimeout(() => veil.classList.add('on'), 650); setTimeout(() => { location.href = href; }, 1350); }
   else { veil.classList.add('on'); setTimeout(() => { location.href = href; }, 300); }

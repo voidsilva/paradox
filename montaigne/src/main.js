@@ -5,6 +5,12 @@
   Roteiro: 7 cenas que se soltam ao vento → "Segure" (a atração) → página clara.
 */
 import Lenis from 'lenis';
+import { dissolve } from 'shared/entry.js';
+import { initSolte } from './solte.js';
+import { initRail } from 'shared/rail.js';
+import { initOutro } from 'shared/outro.js';
+initOutro(document.querySelector('.outro'));
+import 'shared/leave.js';
 import { createSound } from 'shared/sound.js';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -114,15 +120,19 @@ let introP = STILL || reduced ? 1 : 0;
 // enquanto carrega, as pinturas passam como num projetor
 const LOAD_PICS = ['m17-retrato', 'm18-colina', 'm05-punho', 'm06-multidao', 'm10-torre', 'm13-olhos', 'm14-ela', 'm16-bracos', 'm09-horizonte', 'm15-praia'];
 let picI = 0;
-const picTimer = loadPic && !RM && !STILL ? setInterval(() => { loadPic.src = asset('montaigne/img/paint/' + LOAD_PICS[picI++ % LOAD_PICS.length] + '.jpg'); }, 150) : 0;
+const picTimer = 0; // a abertura agora é uma pintura parada que entra em foco (antes trocava a cada 150 ms)
 
 function reveal() {
   clearInterval(picTimer);
   document.body.classList.remove('is-loading');
   loader.classList.add('out');
-  setTimeout(() => loader.remove(), 1700);
+  // a pintura da abertura vira o mundo: vira pó e o vento leva
+  const pic = $('#loadPic');
+  const go = () => dissolve({ img: pic, host: loader, mode: 'dust', filter: 'brightness(1.02) saturate(.85) contrast(.95)', dur: 2300,
+    shade: (c, w, h) => { const g = c.createLinearGradient(0, h, 0, 0); [[0, 'rgba(239,235,226,.96)'], [.52, 'rgba(239,235,226,.15)'], [1, 'rgba(239,235,226,.3)']].forEach(([o, col]) => g.addColorStop(o, col)); c.fillStyle = g; c.fillRect(0, 0, w, h); } });
+  (STILL || !pic.complete || !pic.naturalWidth ? Promise.resolve() : go()).finally(() => loader.remove());
   if (introP < 1) {
-    const t0 = performance.now() + 900, D = 3600;
+    const t0 = performance.now() + 250, D = 3200; // os grãos começam a chegar enquanto o vento ainda leva a abertura
     if (world) world.set({ intro: 0 });
     const step = now => {
       introP = clamp((now - t0) / D);
@@ -147,7 +157,7 @@ function reveal() {
     const labels = $$('.st').map(el => { const n = $('.st__num', el); return n ? n.textContent.trim() : 'Prefácio — Quanto mais segura'; });
     world = await createDust({
       canvas: $('#gl'), tier, still: STILL, scenes: MONTAIGNE.scenes, labels, dir: MONTAIGNE.dir, asset,
-      onProgress: v => { loadN.textContent = String(Math.round(v * 27)).padStart(2, '0'); },
+      onProgress: v => { loadN.textContent = String(Math.round(v * 27)).padStart(2, '0'); loader.style.setProperty('--lp', (v * .9).toFixed(3)); },
     });
     window.__world = world;
     if (!STILL) world.start();
@@ -159,7 +169,7 @@ function reveal() {
   await initCore();
   if (STILL) { reveal(); return; }
   clearInterval(picTimer);
-  loader.classList.add('ready'); loadN.textContent = '27';
+  loader.classList.add('ready'); loadN.textContent = '27'; loader.style.setProperty('--lp', 1);
   $('#enterSnd').focus({ preventScroll: true });
 })();
 
@@ -187,7 +197,8 @@ function setHold(v) {
 }
 function updateCore() {
   const r = coreEl.getBoundingClientRect();
-  const p = clamp(-r.top / (r.height - innerHeight));
+  // a seção começa debaixo do palco das cenas: a primeira meia tela é a cortina subindo
+  const p = clamp((-r.top - innerHeight * .5) / (r.height - innerHeight * 1.5));
   coreP = p;
   if (core) core.set({ p });
   if (holding && (r.top > innerHeight * .5 || r.bottom < innerHeight * .5)) setHold(false);
@@ -335,7 +346,7 @@ function updateWorld() {
     });
   }
   const cur = Math.min(LAST, Math.floor(u + .14));
-  if (!world && cur !== fbCur) { fbCur = cur; stage.style.backgroundImage = `url(${asset('montaigne/img/paint/' + FALLBACK[cur] + '.jpg')})`; }
+  if (!world && cur !== fbCur) { fbCur = cur; stage.style.backgroundImage = `url(${asset('montaigne/img/paint/' + FALLBACK[cur] + '.webp')})`; }
   idx.forEach((li, k) => li.classList.toggle('on', k === cur));
   indexEl.classList.toggle('gone', p >= .985);
   cue.style.opacity = u > .05 || introP < 1 ? 0 : 1;
@@ -449,10 +460,46 @@ const ANS = {
   p: 'La Boétie não pedia nada a ele, e por isso Montaigne nunca o esqueceu. Quanto mais você segura alguém, mais essa pessoa se afasta. Presença sem cobrança é o que fica.',
   f: 'Ensaio quer dizer tentativa. Montaigne reescreveu o livro até morrer e nunca o deu por pronto. O erro não era o fim do trabalho. Era o trabalho.',
 };
+
+// ---------- trilha de capítulos ----------
+{
+  const top = el => el.getBoundingClientRect().top + scrollY;
+  const sceneY = i => top(worldEl) + (i ? (i + .02) / SPAN : 0) * (worldEl.offsetHeight - innerHeight);
+  const labels = $$('#index li span').map(s => s.textContent.trim());
+  const items = FALLBACK.map((bg, i) => ({ label: labels[i] || `Cena ${i}`, img: 'montaigne/img/paint/' + bg + '.webp', y: () => sceneY(i) }))
+    .concat([['#segure', 'Segure', 'montaigne/img/paint/m05-punho.webp'], ['#soltar', 'Seis coisas para soltar', 'montaigne/img/paint/m06-multidao.webp'], ['#vida', 'A vida dele', 'montaigne/img/paint/m10-torre.webp'], ['.pick', 'Segure e solte', 'montaigne/img/paint/m16-bracos.webp'], ['#video', 'O vídeo', 'montaigne/img/paint/m17-retrato.webp']].map(([sel, label, img]) => ({ label, img, y: () => top($(sel)) + (sel === '#segure' ? innerHeight * .6 : 0) })));
+  initRail({
+    items, asset,
+    go: y => { if (lenis) lenis.scrollTo(y, { duration: 1.8 }); else scrollTo({ top: y, behavior: 'instant' }); },
+    light: () => true,
+  });
+}
+
+// o que a pessoa escolhe (ou escreve) vira tinta em grãos; a resposta só aparece depois de soltar
+const pickA = $('#pickA'), solteIn = $('#solteIn');
+let pickKey = '';
+const OWN = 'Montaigne escreveria na margem: o que você segura também segura você. Repare no espaço que sobrou agora.';
+const solte = initSolte({
+  root: $('.pick'),
+  onRelease: () => { pickA.textContent = ANS[pickKey] || OWN; pickA.classList.add('on'); },
+});
+function choose(t, key) {
+  pickKey = key; pickA.classList.remove('on'); pickA.textContent = '';
+  solte.set(t.toLowerCase());
+}
 $$('[data-pick]').forEach(b => b.addEventListener('click', () => {
   $$('[data-pick]').forEach(x => x.setAttribute('aria-pressed', x === b));
-  $('#pickA').textContent = ANS[b.dataset.pick];
+  solteIn.value = '';
+  choose(b.textContent.trim(), b.dataset.pick);
 }));
+let typeT = 0;
+solteIn.addEventListener('input', () => {
+  $$('[data-pick]').forEach(x => x.setAttribute('aria-pressed', false));
+  clearTimeout(typeT);
+  typeT = setTimeout(() => { const t = solteIn.value.trim(); if (t) choose(t, ''); }, 350);
+});
+$('.solte__form').addEventListener('submit', e => { e.preventDefault(); const t = solteIn.value.trim(); if (t) choose(t, ''); });
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(() => choose('o que você segura', ''));
 
 // player
 $('#playerBtn').addEventListener('click', () => {

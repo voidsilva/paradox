@@ -93,7 +93,7 @@ export async function createHold({ canvas, tier = 'high', still = false, asset =
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(32, 1, .1, 200);
 
-  const texs = await Promise.all(SEQ.map(k => loadTex(asset('montaigne/img/paint/' + k + '.jpg'))));
+  const texs = await Promise.all(SEQ.map(k => loadTex(asset('montaigne/img/paint/' + k + '.webp'))));
   const crop = t => { const a = t.image.width / t.image.height, w = Math.min(1, (W / H) / a), h = Math.min(1, a / (W / H)); return new THREE.Vector4((1 - w) / 2, (1 - h) / 2, w, h); };
 
   const uni = {
